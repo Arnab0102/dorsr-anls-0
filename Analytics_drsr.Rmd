@@ -1,0 +1,1730 @@
+---
+title: "Role of Analytics at DoRSR"
+author: "Arnab Basu"
+date:  "`r format(Sys.Date(), '%d-%m-%Y')`"
+
+
+output: 
+  bookdown::html_document2: default
+  bookdown::pdf_document2: default
+  documentclass: scrartcl
+  numbersections: false
+  fontsize: 12pt
+  indent: yes
+  geometry: 
+    - top=30mm
+    - left=15mm
+    - right=15mm
+    - heightrounded
+    
+  toc: true
+  toc_depth: default
+  toc_float: true
+  number_sections: true
+---
+\newpage
+\tableofContents
+\listoffigures
+\listoftables
+\newpage
+```{r loading libs, echo=FALSE, message=FALSE, warning=FALSE}
+
+options(digits = 2)
+library(readr)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(bookdown)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(extrafont)
+library(ggrepel)
+library(scales)
+
+```
+
+
+# <u>Introduction:</u>
+**Directorate of Registration and Stamp Revenue** (hereinafter, **DoRSR**), West Bengal supervises the affair of registration of documents in the state as well as the collection of revenue through Stamps and Registration thereof. Currently, it contributes about **9.5%** of the **State's own tax revenue (SOTR)**.^[Please refer to ["RBI report on State Finances:A Study of Budgets for West Bengal(5th Table from top)"](https://www.rbi.org.in/Scripts/PublicationsView.aspx?id=20211)
+and corresponding [CAG report on State Accounts for West Bengal Budget Estimates](https://cag.gov.in/uploads/state_accounts_report/MKI_APRIL_2020.pdf).]
+
+  At present all the registrations in the state are made through <u>**'e-Nathikaran'**</u> - which is a web-based system being run by a central server. Base values of all the properties of the State are stored in ^[Market value data base or  **MVDB** - prepared and updated at regular interval by the officers of DoRSR ] **'e-Nathikaran'** which feeds both the Registration offices as well as the website ['wbregistration.gov.in']( https://wbregistration.gov.in/(S(cywobqujhrgynjarzvma1xic))/index.aspx) for market value generation.^[Market value is generated mainly by the combination of base value of the property and the  multiplicative factor called 'conversion ratio' applied by the field -level officers. ]
+
+Currently, annual, monthly, and fortnightly revenue data of the districts are collected and assembled by DIGR(Revenue) at the Headquarters ^[This work is done at the district level by the District Registrars]- and this casts a birds' eye view on the trends. 
+However, the huge amount of data placed at our disposal by **'e-Nathikaran'** opens the possibility of exploring these in a structured and systematic manner - which can be conducted centrally at the Headquarter level by the officers of DoRSR - using modern analytical tools. ^[Statistical analytical tools like **R, Python** may be proved very handy in this respect. **Initiatives have been taken up earlier for the enthusiastic officers to be trained in these languages through online platforms.**]
+This will help in 
+
+* detecting the trends in well-known growth areas;
+-	detecting the pattern of transactions at selected areas; 
+-	identifying lesser-known potential growth areas and putting emphasis on them.
+
+Also there is ample scope of utilising and analysing various data  like ROR, Census data etc which are either available in public domain or can be made available from government departments 
+^[ for example, **ROR data from L& LR Department,
+    GST data specifying the details of dealers and respective returns,
+    Data from Agriculture department,
+    Census data,
+    Road data of PWD department** ]alongside, and of exploring whether they exert any weightage 
+
+* on the registration pattern of any particular region/district/office; 
+or,
+* on the **market value** of land, apartment of that area;
+
+and thereby aiding the **'Scientific Framework of Market value'**^[ **Scientific Framework of Market Value** has been envisaged with the aim to reduce the subjectivity in generation of market value of property.](hereinafter, Scientific Framework) intiative taken up by DoRSR.
+ 
+
+
+
+
+
+# <u>Approach:</u>{#secapr}
+
+For effective use of analytics at the DoRSR the steps specified in Figure. \@ref(fig:workflow) can be followed.At first all the registration offices of the state can be categorised into diffent types on the annual revenue as well as on the number of documents they register annually.(Sec \@ref(seccat)).
+
+Then a regular analysis of revenue data of the offices is to be taken up.(Sec \@ref(secreg)).
+
+ * It is to be started with grouping and summarising the revenue data of last three financial years for different categories  - and analysing their growths for that period. (Sec \@ref(secregcat)).
+ 
+  * Then the data can further be grouped and summarised upto administrative division level and analysed. (Sec \@ref(secregdivz)).
+
+  * This analysis is then to be narrowed down to districts and then to individual offices of that specific region or category (Sec \@ref(secregdisto)).
+  
+This step is actually an expansion of the existing works being done by the DIGR(Revenue) towards much deeper and structured end.
+ 
+  Besides this, more specific data regarding MVDB^[**Market Value Data Base** ] and other related data for the offices need to be taken up for deeper analysis. An outline of it has been made in  Sec \@ref(secdeep)).It can be started with mouza-types and conversion ratio data.(Sec \@ref(secmtcr))
+  
+ It is worth mentioning here that DoRSR maintains a database of all the mouzas^[basically smallest administrative units] of the State which are listed PS-wise as well as District-wise. ADSRs further group the mouzas under their respective jurisdictions into different types. 
+  
+ * Based on the location of mouzas they are grouped into 'Rural', 'Municipality' etc;
+ * Considering their importance and location - 'Rural'(**ROO**) mouzas can be grouped into 'Developing'(**DOO**) types, 
+ * while 'Municipality' mouzas can be kept
+    - into variants of ' Municipality1'(**RM1,OM1,DM1** etc) types,     
+    - or into that of 'Municipality2'(**RM2,OM2,DM2** etc) types,
+    - or into various 'Municipality3'(**RM3,OM3,DM3** etc) types. 
+ 
+ Apart from these there is Corporation mouza type(**CCC**)for Corporation area.
+ 
+ All these types have their own set of conversion ratios(see Table \@ref(tab:egcr)).^[ROO in Conv_rate_Rural,DOO in Conv_rate_Developing,(RM1,OM1,DM1 in Conv_Rate_Municipality1,(RM2,OM2,DM2) in Conv_Rate_Municipality2,((RM3,OM3,DM3) in Conv_Rate_Municipality3) etc.Please see Table \@ref(tab:egcr) for reference.]. It has been found that ROs often are not aware of the grouping of mouza-types of their respective offices and existence of highly anomalous numbers in the database is not improbable- which may lead to irregularities in the database. 
+ 
+ Hence, this data needs to be worked upon for detection of any possible anomaly (Please look up to Sec\@ref(secmt)).
+ 
+ Similarly Conversion Ratios of the offices can be taken up. And summarising the number of groups, officewise, any possible anomaly can be detected - as exitence of any high number of groups for an office might point toawards aberration. (Please refer to Sec \@ref(seccr)). 
+ 
+ However, streamlining of conversion Ratios for any ADSR office should be taken up only after properly exploring the prevailing practices of use of different ratios over a span of three financial years- as for even a subtle change without adjusting the basevalue  untoward discrepancies may creep in the MVDB.
+ 
+ Then registration data of the selected offices can be taken up for assessment of their prevailing registration practices (Sec \@ref(secprac)).
+ 
+  This would
+  
+  * help in the identification of potential growth areas (Sec \@ref(secimp)),
+  * as well in the analysis of registration pattern of the offices (See Sec \@ref(secpat))-
+      - by exploring transaction patterns;
+      - and by exploring the monthly/weekly distribution of the transactions 
+      - or even by exploring the hourly distribution of transactions across the office-hours.
+       
+
+Also there is scope for combining other related data, available on different platforms, and exploring them in the context of registration data. These data- besides the data coming of survey^[DoRSR has planned to conduct survey for market value of properties in representative areas by organisation like, **Indian Statistical Institute, Kolkata**] for market value can be helpful in building Market value models envisaged by 'Scientific Framework'.
+
+
+
+```{r workflow,fig.cap="Workflow for optimised use of Analytics in DoRSR",echo=FALSE, out.width='70%',fig.align='center'}
+knitr::include_graphics(
+'C:/Users/Arnab/Desktop/Letters_etc/Analytics_workflow2.png')
+```
+
+## <u>Categorisation of offices:</u>{#seccat}
+
+
+ Categorisation of offices is neceesary for primary identification of the growth zones/offices  and  to render relative importance to them for informed decision making.
+ 
+ And for this purpose offices are put into different categories in terms of revenue ( **A+++,A++,A+,A,B,C,D,E** ) they earn in a fiscal year, as well as in terms of number of documents they register during that time (  A** **, **A*, A,B & C** ) (See Table \@ref(tab:ofcat))
+
+
+It would be worth-mentioning here that immediately before the inception of computerised system - offices were categorised  into **A,B and C** types based on document numbers they register anually- where **A** type registerd more than **8000** documents, **B** type **4000 to 8000** and **C** type - less than **4000** respectively.Considering the increase in the number of **8000+** offices in the mean time,^[**65** during 2018-19, with **27 in 8000 to 10000, 22 in 10000 to 120000 and 27 in 12000+ category respectively**] it is convenient to divide the erstwhile **A** type into two more categories (Table \@ref(tab:ofcat)) for coducting more coherent  analysis of them- as these types generally tend to yield more revenue also.(They earned almost **54%** of the total revenue in 2018-19 and 2019-20.)
+
+
+```{r ofcat,tab.align = "center",echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+library(dplyr)
+
+ofccat <- readxl::read_excel("C:/Users/Arnab/Desktop/Excel_fles/Categorisation_office.xlsx")
+
+opts <- options(knitr.kable.NA = "") #replacing NAs with empty strings
+
+knitr::kable(ofccat, caption = "Revenuewise and Documentwise Office Categorisation", align = "lccr") %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered", full_width=FALSE, font_size = 12) %>% 
+  kableExtra::add_header_above(c("Revenuewise"= 2, "Registered  Doumentwise" = 2))
+
+
+```
+
+
+
+## <u>Regular Revenue cum Performance Analysis:</U>{#secreg}
+
+Revenue data of all the registration offices for 2018-19 , 2019-20 and 2020-21 have been assembled and offices were categorised  in the manner described in Sec \@ref(seccat). 
+
+However, depending on the parameters set (ref Table \@ref(tab:ofcat)), categories of the offices may change from one fiscal year to another(see Table \@ref(tab:revtab)).
+Tracking the changes would be the key to decide where more emphasis should be put.
+
+```{r loading basic revenue data and wrangling, echo=FALSE,message=FALSE,warning=FALSE}
+
+library(readxl)
+# Loading district,officewise revenue data
+
+assemb_20_21 <- read_excel("C:/Users/Arnab/Desktop/Excel_fles/assemb_20_21.xlsx")
+dorsr_synopsis <- assemb_20_21
+
+
+# Wrangling and summarise
+
+dorsr_summary<- dorsr_synopsis %>% select(Division,District,Name,Dist_Km_frm_SHQ,doc_18_19, rev_18_19,doc_19_20,rev_19_20,doc_20_21,rev_20_21,rev_cat_18_19, rev_cat_19_20,doc_cat_18_19,doc_cat_19_20,rev_cat_20_21,doc_cat_20_21,rev_growth,doc_growth,rev_growth_20_21,doc_growth_20_21,`Name of the Officer`) %>% arrange(desc(rev_19_20))
+
+```
+
+
+### <u>Categorywise:</u>{#secregcat}
+
+```{r revtab,echo=FALSE, message=FALSE,warning=FALSE}
+library(dplyr)
+options(digits = 2)
+
+# summarising_revenue_category:2018-19
+
+t1_rev<- dorsr_summary %>% filter(rev_cat_18_19 != "NA") %>% 
+  group_by(rev_cat_18_19) %>% 
+  summarise(num = n(),
+            rev = sum(rev_18_19),
+            prop_rev = sum(rev_18_19)/53839691918*100) %>%   arrange(desc(rev))
+
+  #           prop_rev = sum(rev_18_19)/53839691918*100) %>% 
+  # arrange(desc(rev))
+
+t1_rev <- t1_rev %>% rename(Type = rev_cat_18_19,
+                            prop= prop_rev)
+
+
+#prop= prop_rev)
+
+#t1_rev <- gridExtra::grid.table(t1_rev)
+
+# summarising_revenue_category:2019-20
+
+t2_rev <- dorsr_summary %>% filter(rev_cat_19_20 != "NA") %>% 
+  group_by(rev_cat_19_20) %>% 
+  summarise(num = n(),
+            rev = sum(rev_19_20),
+            prop_rev = sum(rev_19_20)/58158022190 *100) %>%   arrange(desc(rev))
+
+  #           prop_rev = sum(rev_19_20)/58158022190 *100) %>% 
+  # arrange(desc(rev))
+
+t2_rev <- t2_rev %>% rename(Type = rev_cat_19_20,
+                            prop= prop_rev)
+
+#t2_rev <- gridExtra::grid.table(t2_rev)
+
+# summarising_revenue_category:2020-21
+
+t3_rev <- dorsr_summary %>% filter(rev_cat_20_21 != "NA") %>% 
+    group_by(rev_cat_20_21) %>%
+    summarise(num = n(),
+              rev = sum(rev_20_21),
+              prop = sum(rev_20_21)/52137271189*100) %>% 
+              arrange(desc(rev)) 
+
+# prop = sum(rev_20_21)/52137271189*100) %>%
+
+t3_rev <- t3_rev %>% rename(Type = rev_cat_20_21)
+
+#t3_rev <- gridExtra::grid.table(t3_rev)
+
+knitr::kable(
+  list(t1_rev,t2_rev,t3_rev),
+  caption = "Number of offices in different revenue category and their revenue contribution to total revenue", padding = 20,
+  format.args = list(scientific= FALSE),
+  booktabs=TRUE, valign ="t",align = 'lccr') %>%
+  kableExtra::add_header_above(c("2018-19"=1,"2019-20" =1, "2020-21"=1)) %>%
+  kableExtra::kable_styling(bootstrap_options = "bordered",full_width = FALSE , font_size = 14,position = 'center') %>%
+  kableExtra::column_spec(1, color = "blue",background = "azure") %>%     kableExtra::column_spec(2, color = "green",background = "rose")%>%
+kableExtra::column_spec(3, color = "red",background = "azure") 
+
+
+
+```
+
+From table above and Fig \@ref(fig:figcat) it can be found,
+
+ * Around 25-30 offices^[25 in 2018-19 and 2020-21, and 2019-20] of A+++ and A++ categoies contribute around 50% of the State's revenue.
+ * And  
+   - 18 odd offices of A+ category, 
+   - 35 odd offices of A  category
+   contribute around 13% to 16% for each respectively. 
+ * In 2019-20 these offices fared well in general and increase in the number of offices in higher categories w.r.t 2018-19 explains it- as more numbers entered into the higher categories.
+* A+++ and A++ categories earned less in 2020-21 and number of offices 
+in these categories decreased w.r.t 2019-20.
+* These contribute to their next lower levels.
+* Generally, A+++, A++ and A+ categories are more prone to the vagaries of external effects and policy decisions, and suffer or thrive most during such situations.
+* Also, A+++ and A++ offices follow a general trend of growing or shrinking at the expense of other offices having common/similar jurisdiction.
+* B,C type offices are more numerous in numbers (70 and 60 respectively, on average) and their shares to State revenue vary between 13% to 16% and around 6% respectively.
+
+
+
+
+
+```{r figcat, fig.align='center',fig.cap="Diffrent Revenue Categories and Their Contributions to State Revenue:2018-19 to 2020-21", echo= FALSE, out.width= "50%"}
+
+## wrangling for 2018-19
+# --------------------
+t<-assemb_20_21 %>% filter(rev_cat_18_19 !="NA") %>% group_by(rev_cat_18_19) %>% 
+    summarise( num = n(),
+      totalRev= sum(rev_18_19),
+              prop_rev = sum(rev_18_19)/53839691918*100) 
+  
+# Plot for 2018-19
+# ------------------
+  et <- t %>% ggplot(aes(rev_cat_18_19,totalRev,fill= rev_cat_18_19,label = round(prop_rev, digits = 2)))+geom_col()+
+    geom_text_repel()+ggtitle("2018-19")+
+    scale_y_continuous(limits = c(0,2e+10),oob= rescale_none)
+
+
+# Wrangling for 2019-20
+# -------------------------
+t19 <- assemb_20_21 %>% filter(rev_cat_19_20 != "NA") %>%
+  group_by(rev_cat_19_20) %>%
+  summarise(num= n(),
+            totalRev= sum(rev_19_20),
+            prop_rev= sum(rev_19_20)/58099331297*100) 
+
+# Plot for 2019-20
+# ------------------
+
+nn <- t19 %>%  ggplot(aes(rev_cat_19_20, totalRev,
+                          fill= rev_cat_19_20,
+                          label= round(prop_rev, digits = 2)))+ 
+  ggtitle("2019-20")+geom_col()+
+  geom_text_repel()+
+  scale_y_continuous(limits = c(0,2e+10),oob= rescale_none)
+
+
+# Wrangling for 2020-21
+# ------------------------
+t20 <- assemb_20_21 %>% filter(rev_cat_20_21 != "NA") %>%
+  group_by(rev_cat_20_21) %>%
+  summarise(num= n(),
+            totalRev= sum(rev_20_21),
+            prop_rev= sum(rev_20_21)/52137271189*100) 
+
+# plot for 2020-21
+# -------------------
+
+  tw <-t20 %>%  ggplot(aes(rev_cat_20_21, totalRev, fill =rev_cat_20_21, label= round(prop_rev, digits = 2)))+ ggtitle("2020-21")+
+    geom_col()+
+    geom_text_repel()+
+    scale_y_continuous(limits = c(0,2e+10),oob= rescale_none)
+
+
+# combining plots of 2018-19,2019-20,2020-21
+# --------------------------------------------
+  grid.arrange(et,nn,tw)
+  
+```
+
+
+
+ 
+More insights regarding these can be found from the analysis of sections follows.
+
+
+
+### <u>Division/zone:</u>{#secregdivz}
+
+West Bengal has five administrative divisions, namely,
+
+* Presidency: 5 Districts: 
+ Howrah,Kolkata,Nadia,North 24 Parganas, South 24 Parganas;
+* Medinipur: 5 Districts: 
+  Purba Medinipur,Paschim Medinipur, Purulia,Bankura,Jhargram;
+
+* Burdwan: 4 Districts: 
+  Paschim Burdwan, Purba Burdwan, Birbhum,Hooghly;
+  
+* Malda: 4 Districts: 
+  Malda, Murshidabad, Uttar Dinajpur, Dakshin Dinajpur;
+* Jalpaiguri : 5 Districts: 
+  -Darjeeling, Jalpaiguri, Coochbehar, Alipurduar,Kalimpong
+
+The categories (see Tab \@ref(tab:ofcat)) can be further analysed administrative division wise, as shown in Table \@ref(tab:div) and
+in Fig \@ref(fig:figdv). 
+
+These show that
+
+* All the A+++ offices are in Presidency division: and their average distance from State Capital is 4.6 km;
+* Presidency division have
+  - 14 A++, 7 A+ and 10 A category offices;
+  - with avg dist 14.9 km,43.1 km and 47.2 km from State capital respectively;
+  -  and contributing,on average, 25.42% of total revenue among them;
+* That is, these are either in Kolkata and in its immediate surroundings (A++ type) or in its urbanised suburbs (A+ and A types) - distances of A and A+ types suggest that most of them cater to a agriculture base which are getting rapidly urbanised.
+* It is worthmentioning that these offices (as well as the similar types of Hooghly District in Burdwan division ) cover the areas where maximum number of census towns or urbanised centres have come up during 2001 to 2011- a trend which must have accelarated further during the next decade .^[Please Refer to :["Census of India 2011: Primary abstract Data"](https://censusindia.gov.in/pca/pcadata/Houselisting-housing-WB.html) also ref to:[Spatial Perspectives of the
+New Census Towns, 2011:
+A Case Study of West Bengal by Guin and Das.2015. (Pg 117-122)](https://smartnet.niua.org/sites/default/files/resources/10.1177_0975425315589155.pdf
+): These studies attribute to 
+   **strong impact of Kolkata**
+  and
+   the extension of small towns beyond their administrative boundaries 
+  for the considerable growth of new census towns or urbanised centres.
+  For district wise number and types of census towns please refer to:[Emergence of Census Towns and its Socio-Economic Condition:
+Case of West Bengal: Karmakar (Pg-25, Table 3)](https://www.thecho.in/files/Joy-Karmakar_xq1x2f04.pdf 
+)]
+* B type offices of Presidency division are mainly of more agro-based semi-urban areas generally further away from State capital- although well-connected by multiple mode of communication . These offices contribute 4.56 % of state revenue on average. 
+* C and D type offices of Presidency division- are of predominantly agararian background- however well connected with State Capital- (about 3-4 hours of travelling).These two types contribute about 2% of State revenue.
+
+*  A++ and A+ categories of other divisions usually surround the places of strategic importance -industry hubs, important communication junctions, tourist spots.
+
+* 'A' category offices of other divisions are mostly district or sub-division headquarters where rapid urbanisation spills over the age-old administrative boundaries.^[Please refer to [Spatial Perspectives of the
+New Census Towns, 2011:
+A Case Study of West Bengal by Guin and Das.2015.(Pg 122)](https://smartnet.niua.org/sites/default/files/resources/10.1177_0975425315589155.pdf)].
+
+* B category offices of other divisions are generally of semi-urban areas having agri-hinterland and they usually sit over important communication networks. Together their average revenue share is 9.59%.
+
+* It is worth-mentioning that **A,B,C and D category offices of Malda division - 46 in total, are found to be more or less insular to the vagaries of external influences like pandemic**. These offices register 22.07% of total documents registered in the state and together they contribute 8.02% of state revenue.
+
+
+* Keeping in view of the fluctuations in revenue generated by the A+ and upward category offices (covering established growth centres as discussed above) , much coherent focus need to be laid  upon the A and B category offices to taper of possible revenue coming out of the growth centres around it in structured and logical manner.
+
+
+
+
+
+
+
+```{r div, echo=FALSE,align = 'center' ,message=FALSE, warning=FALSE}
+
+options(digits = 2)
+
+# assemb_20_21 %>% filter(rev_cat_19_20 !="NA") %>% group_by(rev_cat_19_20,Division) %>% 
+#     summarise( num = n(),
+#                avg_dist = mean(Dist_Km_frm_SHQ),
+#                totalRev= sum(rev_19_20),
+#                prop_rev = sum(rev_19_20)/58158022190*100,
+#                ) %>% arrange(desc(prop_rev))
+
+
+
+  library(dplyr)
+
+dv <- assemb_20_21 %>% filter(rev_cat_19_20 != "NA") %>%
+  group_by(Division,rev_cat_19_20) %>% 
+                          summarise(num= n(),
+                                   avg_dist = mean(Dist_Km_frm_SHQ),
+                                   avg_gr1= (sum(rev_19_20)-sum(rev_18_19))/sum(rev_18_19)*100,
+                                   avg_gr2 = (sum(rev_20_21)-sum(rev_19_20))/sum(rev_19_20)*100,
+                                   
+                                   rev_shr = sum(rev_18_19+                                                   rev_19_20+rev_20_21)/(53839691918+58099331297+52137271189)*100,
+                                   doc_shr = sum(doc_18_19+doc_19_20+doc_20_21)/(1570639+1566465+1379245)*100) %>% arrange(desc(Division))
+
+
+# tt %>% cor(avg_dist~rev_shr)
+
+
+knitr::kable(dv, 
+             col.names = c("Div","Category","Num","Dist","Gr1","Gr2","RevShr","DocShr"),
+             caption = "Division wise Number of Different Revenue Category Offices",
+             align = "lccccccc") %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered") %>% 
+  kableExtra::add_footnote(c("Div = Administrative Divisions: namely,
+                              Presidency: 5 Districts: Howrah,Kolkata,Nadia,North 24 Parganas, South 24 Parganas;
+                              Medinipur: 5 Districts: Purba Medinipur,Paschim Medinipur, Purulia,Bankura,Jhargram;
+                              Burdwan: 4 Districts: Paschim Burdwan, Purba Burdwan, Birbhum,Hooghly;
+                              Malda: 4 Districts: Malda, Murshidabad, Uttar Dinajpur, Dakshin Dinajpur;
+                              Jalpaiguri : 5 Districts: Darjeeling, Jalpaiguri, Coochbehar, Alipurduar,Kalimpong",
+                             
+                             "Category = Revenue Category: for it F.Y. 2019-20 has been taken up",
+                             "Num = Number of Registration offices in the respective category in that division",
+                             "Dist = Average distance in Km from State Capital",
+                             "Gr1 = Average Revenue Growth of the respective category in 2019-20 w.r.t 2018-19",
+                             "Gr2 = Average Revenue Growth of the respective category in 2020-21 w.r.t 2019-20",
+                             "rev_shr = Respective contribution towrads State Revenue: averaged over F.Y.s 2018-19,2019-20,2020-21",
+                             "doc_shr = Respective contribution towards Total number of documents registered in the state: averaged over 3 F.Y.s 2018-19 to 2020-21"))
+
+```
+
+```{r figdv, echo=FALSE,message=FALSE,warning=FALSE,fig.cap="Revenue Analysis:Division wise",fig.align='center',}
+
+# dv1 <- assemb_20_21 %>% filter(rev_cat_19_20 != "NA") %>%
+#     group_by(Division,rev_cat_19_20) %>% 
+#     summarise(num= n(),
+#               avg_dist = mean(Dist_Km_frm_SHQ),
+#               rev_shr = sum(rev_18_19+rev_19_20+rev_20_21)/(53711792678+58099331297+52137271189)*100,
+#               doc_shr = sum(doc_18_19+doc_19_20+doc_20_21)/(1570639+1566465+1379245)*100, digits = 2) %>% arrange((avg_dist))
+# 
+
+
+dv_Fig1<-dv %>% ggplot(aes(avg_dist,rev_cat_19_20,col= Division,size= (rev_shr), label = num))+
+    geom_point(alpha= 0.5)+geom_text_repel()+
+    scale_x_continuous(limits = c(0,800), 
+                       breaks = c(0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800))+
+    xlab("Average Distance From State Capital (in Km.)")+ ylab("Revenue Category")+
+    ggtitle("Revenue Categories:1: Numbers,Distance From SHQ & Revenue%")+
+    scale_size_continuous(range = c(1.5,8))
+  
+  
+  dv_Fig2 <- dv %>% ggplot(aes( rev_cat_19_20,num,fill= Division,label= round(rev_shr,digits = 2)))+ 
+    geom_col(position = 'dodge')+geom_text_repel()+
+    scale_y_continuous(limits = c(0,30),breaks = c(0,5,10,15,20,25,30))+
+    xlab("Revenue Category") +ylab("Number of offices")+
+    ggtitle("Revenue Categories:2: Categories,Numbers & Revenue%")
+    
+  
+  grid.arrange(dv_Fig1,dv_Fig2)
+    
+```
+
+ Fig \@ref(fig:figdv) contains two graphs- namely,
+ 
+  *  **Revenue Categories:1:Numbers,Distance From SHQ & Revenue%**;
+  *  **Revenue Categories:2:Categories,Numbers & Revenue%**;
+  * First one plots different **revenue categories division-wise as dots on a distance scale- average distance from state capital in km**.The size of the dots depicts the respective revenue contributions of the respective categories. THe number of offices in the particular category are shown besides the respective dots.
+  * Second one plots **different revenue categories division-wise  and their respective numbers in columns**. Respective revenue-contributions are shown besides each column.
+
+### <u>District/office wise:</u>{#secregdisto}
+
+#### <u>Districtwise:</u>{#secregdist}
+
+Analysis of districtwise revenue then can be done to get an overall picture of the performances. Table \@ref(tab:statrev)^[showing **districtwise revenue** collected and **number of documents** they registered in **last three finacial years**, **growth in revenue** and **growth in doument numbers**, their **average revenue contribution in%** and **average documents in%** they contribute to the state total] and Figures \@ref(fig:figdistrd)^[
+It has two graphs: **districtwise average revenue share**, and **districtwise average document share**;],
+
+ \@ref(fig:figdistgr)^[It also has two graphs:**Revenue growth of the districts in 2019-20**;**Revenue growth of the districts in 2020-21**. In both, corresponding year's state average has been shown as horizontal blue lines.] render necessary insights.
+```{r statrev,tab.align = "center",echo=FALSE, message=FALSE, warning=FALSE}
+
+
+# dist_rev_20_21 <- read_excel("C:/Users/Arnab/Desktop/Excel_fles/Revenue_growth_etc_state_20_21.xlsx")
+# 
+# rev_summary <- dist_rev_20_21 %>% select(-c("doct_share_19_20","rev_share_19_20","doc_share_20_21","rev_share_20_21"))
+# 
+# 
+# rev_doc_share <- dist_rev_20_21 %>% mutate(mean_doc_share = (doct_share_19_20 + doc_share_20_21)/2,
+#                                           mean_rev_share = (rev_share_19_20 + rev_share_20_21)/2) %>%
+#   select(-c("doct_share_19_20","doc_share_20_21",
+#            "rev_share_19_20","rev_share_20_21","District_code"))
+# 
+# knitr::kable(rev_doc_share,
+#              align = "lccccccccc",format.args = list(scientific = FALSE), caption = "District wise Revenue etc. data of the State") %>%
+#    kableExtra::kable_styling(bootstrap_options = "bordered", full_width = FALSE, latex_options = "scale_down") 
+#   
+# 
+
+
+
+rev_doc_shr <- assemb_20_21 %>% filter(rev_cat_18_19 != "NA") %>% group_by(District) %>% 
+  summarise(Totrev18_19 = sum(rev_18_19),
+            Totdoct18_19 = sum(doc_18_19),
+            Totrev19_20 = sum(rev_19_20),
+            Totdoct19_20 =sum(doc_19_20),
+            Totrev20_21 = sum(rev_20_21),
+            Totdoct20_21 = sum(doc_20_21),
+            rev_growth_19_20 = (Totrev19_20 - Totrev18_19)/Totrev18_19*100,
+    doc_growth_19_20= (Totdoct19_20-Totdoct18_19)/Totdoct18_19*100,
+    rev_growth_20_21= (Totrev20_21- Totrev19_20)/Totrev19_20*100,
+    doc_growth_20_21=(Totdoct20_21- Totdoct19_20)/Totdoct19_20*100,
+    mean_rev_shr = (Totrev18_19+Totrev19_20+Totrev20_21)/(53839691918+58099331297+52137271189)*100,
+ mean_doc_shr = round(Totdoct18_19+Totdoct19_20+Totdoct20_21)/(1570639+1566465+1379245)*100) %>% 
+  arrange(desc(mean_rev_shr))
+
+
+#rev_doc_shr
+
+knitr::kable(rev_doc_shr,
+             col.names = c("District","Rev1","Doc1","Rev2","Doc2","Rev3","Doc3","RvGr1","DocGr1","RvGr2","DocGr2","rvshr","docshr"),
+             align = "lcccccccccccr",format.args = list(scientific = FALSE), caption = "District wise Revenue etc. data of the State") %>%
+   kableExtra::kable_styling(bootstrap_options = "bordered", full_width = FALSE, latex_options = "scale_down") %>% 
+  kableExtra::add_footnote(c("Rev1 = Revenue in F.Y. 2018-19",
+                             "Rev2 = Revenue in F.Y. 2019-20",
+                             "Rev3 = Revenue in F.Y. 2020-21",
+                             "Doc1 = Number of Documents registered in 2018-19",
+                             "Doc2 = Number of Documents registered in 2019-20",
+                             "Doc3 = Number of Documents registered in 2020-21",
+                             "RvGr1 = Revenue Growth in 2019-20 w.r.t 2018-19",
+                             "RvGr2 = Revenue Growth in 2020-21 w.r.t 2019-20",
+                             "DocGr1 = Document Growth in 2019-20 w.r.t 2018-19",
+                             "DocGr2 = Document Growth in 2020-21 w.r.t 2019-20",
+                             "rvshr = Percentage of Revenue contributed towards the state total- averaged over 3 F.Y.s- 2018-19 to 2020-21",
+                             "docshr = Percentage of the Number of documents registered to the state's total number: averaged over 3 F.Y.s- 2018-19 to 2020-21"))
+
+```
+```{r figdistrd, fig.cap="Revenue and Document Share of the Districts:2018-19 to 2020-21",echo=FALSE,message=FALSE,warning=FALSE,fig.align='center',out.width= "75%"}
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/Districts_rev_doc.png")
+
+
+```
+```{r figdistgr,fig.align='center',fig.cap="Revenue Growth of Districts:2019-20 to 2020-21",out.width= "70%",echo=FALSE,message=FALSE,warning=FALSE}
+
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/dist_grow1.png")
+
+```
+ These show 
+ 
+ * quite expectedly (Please refer to discussions in Sec \@ref(secregdivz))- **North 24 Parganas, South 24 Parganas, Kolkata (or RA_kolkata), Howrah, Hooghly** are top five revenue contributors. Together they put up about **60%** of the total revenue ( Graph 1 of Fig \@ref(fig:figdistrd));
+ * while, **Murshidabad,North 24 Parganas, South 24 Parganas, Purba Medinipur, Nadia, Malda** are the top contributors towards total number of documents registered annually.Together they share around **55%** of the total numbers (Graph 2 of Fig \@ref(fig:figdistrd));
+ 
+ * that In 2019-20 most of the districts fared well and only **four** districts fell below the state growth of **7.91%** (Graph 1 of Fig \@ref(fig:figdistgr));
+ * while in 2020-21 only four districts, namely **Murshidabad, Paschim Medinipur, Jhargram, Uttar Dinajpur**-together which contribute only **10%** of the total revenue (Uttar Dinajpur's share is 1.51% and Jhargram's 0.3%)- shown positive growth, and excepting Hooghly, all the top five revenue earning districts fell below the state growth of **-10.26%** (Graph2 of Fig \@ref(fig:figdistgr)).
+ 
+
+
+#### <u>Officewise:</u>{#secregof}
+
+ Likewise, similar exercises can be taken up for offices. 
+ 
+ * Table \@ref(tab:ofcnm) has been prepared by picking up State's top revenue earning offices and sorting them in descending order of annual revenue they earned. 
+ 
+ * For sorting F.Y 2019-20 has been considered as most of the top offices fared well in that year. 
+ * Also revenue, number of documents for last three financial years,
+ revenue,document-growth for the corresponding years have been taken into account.
+ 
+ * Figures \@ref(fig:figofo) and \@ref(fig:figofc) show the respective revenue collected at these offices during 2018-19,2019-20 and in 2020-21.
+ 
+ 
+ 
+ 
+```{r ofcnm, echo=FALSE,message=FALSE,warning=FALSE}
+
+# ##########################################################
+# #Division wise A type and upward category offices:Numbers
+# ##########################################################
+# library(dplyr)
+# options(digits = 2)
+# 
+# assemb_20_21 %>% filter(rev_cat_19_20 %in% c("A+++","A++","A+","A")) %>% 
+#   group_by(Division) %>% summarise(num= n(),
+#                                    rev_shr = sum(rev_18_19+ rev_19_20+rev_20_21)/(53839691918+58158022190+52137271189)*100,
+#                                    doc_shr = sum(doc_18_19+doc_19_20+doc_20_21)/(1570639+1566465+1379245)*100) %>% arrange(desc(rev_shr))
+# 
+# ####################################################
+#Divisionwise A+++ and A++ offices:Names and details
+####################################################
+# 
+# assemb_20_21 %>% filter(rev_cat_19_20 %in% c("A+++","A++")) %>% 
+#     arrange(desc(rev_19_20)) %>% 
+#     select(c(Division,office_name_hq,rev_18_19,rev_19_20,rev_20_21,rev_growth,doc_growth,rev_growth_20_21,doc_growth_20_21))
+
+
+
+a_top <- assemb_20_21 %>% 
+  filter(rev_cat_19_20 %in% c("A+++","A++")) %>% 
+    arrange(desc(rev_19_20)) %>% 
+    select(c(District,office_name_hq,Dist_Km_frm_SHQ,rev_18_19,rev_19_20,rev_20_21,rev_growth,doc_growth,rev_growth_20_21,doc_growth_20_21))
+
+
+
+knitr::kable(a_top,
+    col.names = c("Distr","Offc","dist","rev1819","rev1920","rev2021","revgr1","docgr1","revgr2","docgr2"),
+    format.args = list(scientific = FALSE),
+    caption = "High yielding Revenue Offices",
+    booktabs= TRUE, align = "lcccccccr",padding = 20,position= 'center') %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered",latex_options = "scale_down",position = 'center') %>% 
+  kableExtra::add_footnote(c("dist = Distance from State caital/State HQ,in Km",
+                             "rev1819 = Revenue in 2018-19",
+                             "rev1920 = Revenue in 2019-20",
+                             "rev2021 = Revenue in 2020-21",
+                             "revgr1 = Revenue growth in 2019-20 w.r.t 2018-19",
+                             "revgr2 = Revenue growth in 2020-21 w.r.t 2019-20",
+                             "docgr1 = Document growth in 2019-20 w.r.t 2018-19",
+                             "docgr2 = Document growth in 2020-21 w.r.t 2019-20"))
+```
+
+
+
+
+
+```{r figofo,fig.cap= "Top Revenue Earning offices :2018-19",fig.align='center',echo=FALSE,message=FALSE,warning=FALSE,out.width="100%"}
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/atop1819.png")
+```
+
+
+```{r figofc,fig.cap="Top Revenue Earning offices in 2019-20 and 2020-21",fig.align='center',warning=FALSE,echo=FALSE,message=FALSE,out.width="100%"}
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/atop_19_21_1.png")
+
+```
+These show
+
+* that the 100 Cr+ (or A+++ category as discussed earlier) offices are situated within 15-20 km of the state headquarters and include RA offices and several offices of Alipore, and ADSRs Rajarhat, Sealdah, Dumdum (ADSR Cossipore Dumdum - to be more specific);
+
+* that the rest offices (mostly A++ categories) fall mostly in Kolkata's suburb districts such as North 24 Parganas, South 24 Parganas, Howrah ; as well as in the prominent growth areas like Asansol-Durgapur industrial zone (ADSR Asansol,ADSR Durgapur) and Siliguri(ADSR Bhaktinagar in Jalpaiguri district and ADSR Bagdogra, ADSR Siliguri in Darjeeling district) and in some District head quarters over important communication networks (ADSR Burdwan Sadar, ADSR Murshidabad Sadar).
+
+
+
+Further revenue-growths of these offices can be studied by plotting them in Figure \@ref(fig:figrevgrnt) (contains two plots,the second one been adjusted by keeping out ARA-III-whose high number dwarfed the others) for 2018-19 and in Figure \@ref(fig:figrevgrtt) - for 2020-21 respectively.
+
+```{r figrevgrnt,fig.cap= "Revenue Growth of Top Offices in 2019-20",fig.align='center',echo=FALSE,warning=FALSE,message=FALSE,out.width = "100%"}
+
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/grw_19.png")
+
+```
+```{r figrevgrtt,fig.cap="Revenue Growth of Top Offices in 2020-21", fig.align='center', echo=FALSE,warning=FALSE,message=FALSE, out.width= "100%"}
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/grw_21.png")
+
+```
+ Findings are as follows-
+ 
+ In **2018-19**. (Please refer Fig \@ref(fig:figrevgrnt))
+
+ *	ARA-III - even with negative document growth (-15.56 %) showed revenue growth of a stellar 244.63%;
+ *	ARA-II's document growth was 91% and revenue grew at 4.06 %;
+ *	ARA-IV's document growth was -6.37% and revenue growth -8.67%;
+ *	ARA-I's document growth was -32.56% and revenue growth -45.15%;
+ 	It is worth-mentioning that during this period - jurisdiction of individual ARA offices were lifted and during first phases of implementation system by itself would pick up the offices - which however was sorted out in very short time.
+
+Nevertheless, few notable things happened around this-
+
+ *	It led to the exodus of revenue from ARA offices towards suburb offices.^[Earlier, ARA-I had its jurisdiction over South 24 Parganas, Howrah, and ARA-II over North 24 Parganas.]
+ *	Offices like ADSR Dumdum (ADSR Cossipore Dumdum, more specifically), ADSR Bidhannagar, ADSR Sealdah, ADSR Garia, DSR-I & DSR-II Howrah, ADSR Sodepur seems to have benefited most in this situation;
+ *	Among ARA offices - ARA III seems to have registered more **documents involving property transfer** instead of **documents involving other than immovable property** that it would do earlier.
+ *	A large chunk of latter kind of documents seems to have been registered at ARA-II;
+ *	However, offices at Alipore could not reap the benefits.
+
+
+Hence it can be easily inferred that **ARA offices, offices at Alipore, ADSR offices Rajarhat, Sealdah, Dumdum, Behala, Garia, Barasat,** ^[Uttarpara, Belgharia, Barrackpore falls within this category- however, not taken up for this particular discussion] **Sodepur, Naihati and offices at Howrah Sadar -  share among themselves the revenue of greater Kolkata urban area. These offices have a tendency to grow or shrink at the expense of the others having jurisdiction common in themselves.**^[Flight of document to a particular office also depends on the **_Public Perception_** of that office - which is built mainly upon the effectiveness of service it renders].Generally, far the office is from Kolkata - sharing of revenue with ARA offices decreases.^[Similar inferences can be drawn for district ADSR offices and corresponding DSR offices if more offices are worked upon.].
+	<p>	Apart from these offices, ADSRs Durgapur, Berhampore, Asansol, Bagdogra, Burdwan, Bhaktinagar showed positive revenue growth.</p>
+
+
+In **2020-21**	(Please refer Fig \@ref(fig:figrevgrtt))
+
+ *	<u>Pandemic took its toll and most of these offices showed negative revenue growth</u>. 
+ *	Only ARA- I showed significant positive growth. Decreased revenue of ARA-IV seems to have been distributed among ARA-I and ARA-III.
+ *	Meanwhile jurisdiction among the DSRs in the districts has been lifted in this financial year. It seems to have benefited DSR-IV South 24 Parganas during this period.
+
+It is found from the above analysis that revenue of top offices in Kolkata and its immediate suburbs are more or less distributed among themselves. With <u>_Covid looming above and demand shrinking, it is more or less becoming saturated_</u>. ^[ Also, property- value of these areas remain under constant scanner of different authorities and organisations; and even any attempt to rationalization- leave alone thorough overhaul- might not be very smooth.]
+ **Hence it is high time that DoRSR looked beyond these offices** and  
+
+*	**Starts thorough analysis of the next important levels, one by one, and examine regularly the registration practices prevalent in these offices**, 
+*	analyzes how they prepare their MV and other related database,
+*	and guiding them
+ 
+     - how efficiently those can be handled by employing lesser subjectivity;
+	  - and the growth centers be identified properly and revenue from them can be tapered of. 
+
+
+## <u>Deeper Analysis of Registration data for select zone or office:</u>{#secdeep}
+
+Please refer to the discussion in Sec \@ref(secapr). The rationale for taking up deeper analysis of database of individual offices has been discussed there. To reiterate, it will help in identify the anomalies present in the database 
+
+* by analysing the mouzatypes and conversion ratios-
+   - where districtwise and PSwise data of different mouza types would be grouped and summarised and their respective numbers are to be checked- primarily offices having any unusually high number, specially in 'Developing' type in comparison with others in relatively not very developed zone , can be picked up for further analysis;
+   - and subsequently conversion ratios are to be picked up and to be grouped and summarised districtwise and officewise. Like mouza-type grouping, here also grouping may reveal presence of unusually high number of groups - 
+   
+   Such offices can be taken up and registration data of these offices are to be examined to explore the registration practices which might point towards unintentional practices of using different ratios/usages even for similar type of transfers.
+   Also registration pattern of particular offices can be explored by analysing the seasonal and spatial distribution of transfers. It would help taking informed decision for administrative purposes and for focussing on the growth zones more logically.
+
+
+
+### <u>Analysis of Mouza types and Conversion Ratios:</u>{#secmtcr}
+As discussed mouza-types and conversion ratios are taken up for grouping and summarising.
+
+#### <u>District and PS wise summarsing of different mouzatypes:</u>{#secmt}
+
+ All the mouzas have been grouped under respective Districts, PSs and numbers of different types, namely 'Rural','Developing'etc (Please refer to the discussion in Sec \@ref(secapr)) and have been summarised in table \@ref(tab:mouzaty) - specially the  proporionate number of 'Developing' mouzas has been taken into consideration. Any high number, specially in not so developed zones may be picked up.Table \@ref(tab:mouzaty) tesifies presence of such and can be supported by Fig \@ref(fig:figmouzaty).
+```{r mouzaty, echo=FALSE,message=FALSE,warning=FALSE, position = "float_right"}
+
+mouza_synopsis <- read_xlsx("C:/Users/Arnab/Desktop/DISTRICT_PROFILE/Mouza_district_state/No_of_Mouzas_PS_district_etc.xlsx")
+
+
+# mouza_synopsis %>% colnames()
+
+# mouza_synopsis %>% arrange(desc(Developing_Proportion)) %>% head(30)
+
+ knitr::kable((mouza_synopsis %>% arrange(desc(Developing_Proportion)) %>% 
+                                         select(-c("district_code","ps_code","Total_No_of_Corporation_Mouzas")) %>% head(20)),
+           col.names = c("Dist","PS","TotMouz","Rrl","Dev","Muni","Muni1","Muni2","Muni3","Dev_prop"),
+           caption = "Analysis of District & PS wise Mouza Types",
+           booktabs = TRUE, align = "lccccccccr") %>% 
+   kableExtra::kable_styling(bootstrap_options = "bordered") %>%
+   kableExtra::add_footnote(c("Dist = District Name",
+                             "PS = Police Station Name",
+                             "TotMouz = Total Number Mouzas in that PS",
+                             "Rrl = Total Number of Rural Mouzas in that PS",
+                             "Dev = Total Number of Developing Mouzas in that PS",
+                             "Muni = Total Number of Municipality Mouzas in that PS",
+                             "Muni1 = Total Number of Municipality Type 1 Mouzas in that PS",
+                             "Muni2 = Total Number of Municipality Type 2 Mouzas in that PS",
+                             "Muni3 = Total Number of Municipality Type 2 Mouzas in that PS",
+                             "Dev_prop = Proprtion of Developing mouzas to Total Number of Mouzas in that PS",
+                             "Rows have been created in the descending order of Dev_proportion in the state and only the top 30 have been shown here."))
+
+```
+
+
+From Table above, it is found that there are many police stations in the state with high 'Developing' to 'Total' mouza ratio ( here, Developing_Proportion ).
+
+* However, keeping in view of the level of development for PSs like 'Kolkata Leather Complex','Sankrail','Rajarhat','Domjur' presence of such high numbers can be explained.
+* But, for PSs like 
+  - **Ketugram**(Number of Developing Mouzas **114** out of total **122** ),
+  - **Magra**(**45** out of **52**) ,
+  - **Kaliganj**(**103** out of **127**),
+  - **Nakashipara**(**86** out of **109**),
+  - **Kandi**(**59** out of total **158** of which **11 are Municipality mouzas**), 
+  - **Nandakumar**(**57** out of **101** ),
+  - **Haldibari**(**32** out of total **62** of which **3 are Municipality mouzas**),
+  - **Balagarah**(**67** out of **136**),
+  - **Tapan**(**138** of **279**),
+  - **Swarupnagar**(**30** out of **66**),
+  it seems unlikely^[For exmple, transaction data of Ketugram has at least 20 mouzas under Developing category for which average market value does not exceed Rs. 7000 with total number of plots registered not exceeded 150 over a span of 3 financial years (2016-17,2017-18,2018-19- (upto January))] and warrants for further study of the Conversion Ratios in general and that of practices around their usages during registration.
+
+
+
+
+
+```{r figmouzaty, fig.cap="PSs Having High Proportion of Developing Mouzas to Total", fig.align='center',warning=FALSE,echo=FALSE,message=FALSE, out.width= "100%"}
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/devmz.png")
+
+
+```
+
+#### <u>District and Officewise summarising of Ratios:</u>{#seccr}
+
+Generally speaking,'Conversion Ratio' is the list of factors assigned for all landgroups and mouza-types of a ADSR office. Usually all the land-types  procured from 'Land Department' are put into different categories or land-groups by ADSRs based on the similarity of usages.  Each land-group has its own set of multiplicative factors. ^[ADSRs may propose change in the ratios during their annual updation proposal].Table \@ref(tab:egcr) is an example of the format as to how conversion ratios of ADSR offices are stored.
+
+
+
+```{r egcr, echo=FALSE,message=FALSE, warning=FALSE}
+library(dplyr)
+cr <- read_excel("C:/Users/Arnab/Desktop/Excel_fles/Conversion_Ratio.xlsx")
+
+knitr::kable(cr %>% head(10), caption = "Example of a Conversion Factor Table:ADSR BANKURA", align = "lcccccccccccr",
+             col.names = c("Dtcd","Dt","Rcd","offnm","uscd","clcd","class","rrl","dev","m1","m2","m3","crp"),
+             position= 'center') %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered") %>% 
+  kableExtra::add_footnote(c("Dtcd = District Code", 
+                             "Dt= District",
+                             "Rcd= RO Code",
+                             "offnm = Office Name",
+                             "uscd = Land Use Code - prepared at DoRSR based on the grouping proposed by ADSRs",
+                             "clcd = Land Class Code - maintained by Land department",
+                             "class = Land Class supplied primarily by Land Bepartment. On few occasions ADSRs have also introduced few classes.",
+                             "rrl = Conversion Ratio for Rural Mouzas",
+                             "dev = Conversion Ratio for Developing Mouzas",
+                             "m1 = Conversion Ratio for Municipality1 Mouzas",
+                             "m2 = Conversion Ratio for Municipality2 Mouzas",
+                             "m3 = Conversion Ratio for Municipality3 Mouzas",
+                             "crp = Conversion Ratio for orporation Mouzas : Applicable for Corporation area of KMC, HMC, BMC etc.",
+                             "For discussion on grouping of mouzas, please refer to Sec 2: Approach"))
+
+```
+
+
+**Market value** of a property is determined by **multiplying the basevalue** of that particular property and the **conversion factor assigned for that particular landgroup**(of that very mouza-type) to which its landtype belongs. ROs determine the proposed use of that particular property by employing their field knowledge and use the respective conversion ratio to reach at the market value of that property- which leaves an ample scope of subjectivity.
+
+ So a study of the  officewise number of landgroups needs to be undertaken and it is to be reconciled with the registration data of the offices in regular interval to find out whether the landgroups (and in turn conversion ratios) are actually being utilised properly. 
+
+Table \@ref(tab:lgsum), Figure \@ref(fig:lgof) and  Figure \@ref(fig:figlg)) have been prepared for this purpose. 
+
+  * Table Table \@ref(tab:lgsum) has two **separate** tables **T1** and **T2**.
+    - **T1** shows districtwise list of median^[In statistics and probability theory, the median is the value separating the higher half from the lower half of a data sample, a population, or a probability distribution. For a data set, it may be thought of as "the middle" value. The basic feature of the median in describing data compared to the mean (often simply described as the "average") is that it is not skewed by a small proportion of extremely large or small values, and therefore provides a better representation of a "typical" value. source;[wikipedia]("https://en.wikipedia.org/wiki/Median")]number of landgroups.
+  
+    - **T2** lists the **number of landgroups** and  the **number of offices having that particular number of landgroups** (or set of conversion ratios) and what **proportion** is that number to the toatal number of offices of State.
+    
+  * Figure \@ref(fig:lgof) summarises the number of offices with corresponding number of landgroups.
+      
+  * Figure \@ref(fig:figlg) plots all the offices alongwith their corresponding number of landgroups.With the help of [boxplots](https://en.wikipedia.org/wiki/Box_plot), it also plots the distribution of the number of landgroups within a district across its offices.
+  
+  From these,
+  it is found that
+  
+  * ADSR offices do have a lot of variations in the number of landgroups- starting from **2 to 62**. Figure \@ref(fig:figlg)).
+  * Median number of landgroups for all offices of state is 13.
+  * There are **49** offices (21.74%) with landgroups more than **20**. (Table \@ref(tab:lgsum))
+  * There are **74** offices (32.87%) with landgroups less than or equal to **10**,
+  * And, **109** offices (48.46%) have landgroups **11-20**.
+  * 20 offices for each have 11 and 15 landgroups.(Fig \@ref(fig:lgof)).
+  * In general,offices of the districts **Purulia (24), Murshidabad (21), Purba Bardhaman (18) , Kalimpong(17),Paschim Medinipur(17) and Nadia(16)** have generally much higher number of land groups.
+  
+
+
+
+```{r lgof,fig.align='center',fig.cap="Number of Land groups and Number of Offices",echo=FALSE,message=FALSE,warning=FALSE,out.width="110%"}
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/lg_ln.png")
+
+```
+Table \@ref(tab:lgsum) below captures the a picture of diffent number of landgroups,number of offices and a summary of district wise distribution of the number of landgroups.
+
+It has two parts. 
+
+ * In one **Part 1** it shows  district wise [**_median_**](https://en.wikipedia.org/wiki/Median) number of landgroups. 
+ * And **Part 2** summarises different number of landgroups along with respective number of offices having it.
+
+
+```{r lgsum,echo=FALSE, message=FALSE, warning=FALSE}
+
+#Importing landgroups_offices_data and stroring it in a dataframe lg
+# ------------------------------------------------------------------
+lg<- read_excel("C:/Users/Arnab/Desktop/DISTRICT_PROFILE/landgroups_offices/landgroups_offices.xlsx")
+
+
+
+# Summarising the data districtwise and putting into  dataframe lg_district
+# -------------------------------------------------------------------------
+
+lg_district <- lg %>% group_by(District) %>% summarise(Mdlg = round(median(Num_of_landgroups))) %>% arrange(desc(Mdlg))
+
+
+
+# Summarising lg dataframe to number of landgroups and that with corresponding number of offices:putting it into lg-gr1 df
+# ------------------------------------------------------------------------------------------------------------------------
+lg_gr1 <- lg %>% group_by(Num_of_landgroups) %>% summarise(Num_of_offc=n(),
+                                                              proportion = round(Num_of_offc/225*100,digits = 2)) %>%
+  arrange(desc(Num_of_offc))
+
+
+# Knitr table combining 'lg' and 'lg_gr1' dataframe
+# ---------------------------------------------------
+
+knitr::kable(list(lg_district,lg_gr1), align = "ccr", booktabs= TRUE, 
+             caption = "Landgroups summary",
+             padding = 100) %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered", font_size = 18,position = 'center') %>% 
+  kableExtra::add_header_above(c("Part 1 :District wise Median Number of Landgroups"=1,"Part 2:Number of Land groups and Number of offices"= 1)) %>% 
+
+   kableExtra::footnote(number = c("Part 1:Mdlg = Median number of Landgroups of that District,rounded to nearest whole number",
+                              " Part 2:Num_of_landgroups= Number of land groups",
+  "Part 2:Num_of_offc= Number of offices with that particular number of land groups",
+  "Part 2:proportion = Proportion of the Number of offices in that particular category to total number of offices",
+  "Explanation of Part 2:1st row  has 11 in 'Num_of_landgroups' column and 20 in 'Num_of_offc' column,
+   it means 20 offices have 11 landgroups.")) %>% 
+  kableExtra::column_spec(1, color = "black",background = "azure") %>% 
+  kableExtra::column_spec(2, color = "black",background = "pink")
+
+   
+# knitr table with 'lg', decided later to not using
+# --------------------------------------------------
+# knitr::kable(lg %>% group_by(Num_of_landgroups) %>% summarise(num_offices=n(),
+#                                                               proportion = round(num_offices/225*100,digits = 2)) %>% 
+#     arrange(desc(num_offices)),caption = "Number of Land groups and Number of offices with corresponding Number of groups",
+#    position= "center",align = "ccc",
+#    col.names = c("lndnum","ofnum","per")) %>% 
+#   kableExtra::kable_styling(bootstrap_options = "bordered") %>% 
+#   kableExtra::add_footnote(c("lndnum = Number of land groups",
+#   "ofnum= Number of offices with that particular number of land groups",
+#   "per = Proportion of the Number of offices in that particular category to total number of offices",
+#   "Explanation:1st row has 11 in 'lndnum' column and 20 in 'ofnum' column,
+#    it means 20 offices have 11 landgroups."))
+```
+
+
+```{r figlg,fig.cap="Number of Landgroups of the ADSR offices" ,fig.align='center',warning=FALSE,echo=FALSE,message=FALSE, out.width= "125%"}
+knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/lg_box.png")
+```
+
+
+
+
+
+
+
+Table \@ref(tab:lgcr) below shows the list of few offices having higher number of landgroups.
+
+```{r lgcr, echo=FALSE,message=FALSE, warning=FALSE}
+
+lg<- read_excel("C:/Users/Arnab/Desktop/DISTRICT_PROFILE/landgroups_offices/landgroups_offices.xlsx")
+
+knitr::kable(lg %>% head(10),
+             caption = "Offices with most number of land groups: Top 10 of the State",
+             col.names = c("District_code","Disrict","ro_code","office","num_of_landgrps"),
+             position= "center",
+             align = "ccccc") %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered") 
+# %>% 
+#   kableExtra::add_footnote(c("Dtcd = District Code",
+#                              "Dist = district",
+#                              "rocd = RO Code",
+#                              "office = Office Name",
+#                              "count = Number of Landgroups present in that office"))
+
+```
+
+
+
+
+  Primary analyses of registration data (See Sec \@ref(secprac)) of few select offices as well as the field experience tell that - whatever be the number of landgroups in their respective databases, ROs mostly use 6-7 landgroups or conversion ratios during market-value determination . And these revolve largely around variants of 'agricultural','waterbody','residential','commercial' and in some cases 'industrial' groups of usages. 
+
+Hence, existence of higher number of landgroups eventually increases the chance of ambiguous land-groups' presence in the database, which in turn enhances the chance of ambiguity around market value determination.
+
+<u>And keeping in mind the fact that registration generally covers only around 5% of the plots of any jurisdiction and generally occurs(often with repetition) around  some well-known pocketed areas(See Fig \@ref(fig:rnjplt)); **_stress should be put in to encourage the ROs to prepare the database of basevalue of properties more carefully** by catching up the ground reality of location, level of development using plot maps, satellite imageries etc_, so that **reliance over conversion ratios can be minimised.**</u> 
+
+In this exercise ROs can be helped by making them aware of the registration pattern of their offices and by helping them to identify growth zones of their jurisdictions.
+
+
+### <u>Assessment of Registration Practices for select offices:</u>{#secprac}
+
+ Registration practices of the offices need to be assessed in regular interval which would enable DoRSR to guide the ROs more effectively.
+For it **registration data of the offices is to be taken up for analysis and all the offices need to be covered in at least once in two years' time.**
+
+ Broadly these would help in
+ 
+ * identification of important growth zones;
+ * analysis of 'Proposed land use' practices;
+ * assessment of registration pattern.
+
+To illustrate this process registration data of ADSR Raniganj for f.y 2018-19,2019-20 and 2020-21(upto December'20) has been taken up.**ADSR Raniganj** is an important office of Paschim Burdwan district.Its annual revenue ranges between 32 Cr to 34 Cr(A+ category) with annual registration around 6600 covering 4 PSs,namely, Raniganj, Jamuria,Andal,Pandabeswar.
+Jurisdiction of it has marked agricultural,industrial (colliery and steel, sponge-iron) areas, reasonably developed residential ( 2 municipalities besides [48 census towns](https://censusindia.gov.in/pca/pcadata/Houselisting-housing-WB.html] or well-inhabited area- as per census-2011) and commercial areas.Economy of this area largely depends on the colliery.
+
+#### **<u>Identification of Important/Potential growth zones:</u>**{#secimp}
+
+It is known fact that registration of apartments play a crucial role towards revenue of the urbanised areas - so, for identification of important growth zones within the jurisdiction, relative share of land and apartment registration also needs to be looked into - starting from the jurisdiction level then gradually to PS level and to mouza and plot level needs to be analysed.
+ 
+ Table \@ref(tab:aptl) has been created to show the share of land and apartment registration for whole of the jurisdiction.
+ 
+```{r aptl,echo=FALSE,message=FALSE,warning=FALSE}
+
+rnj <- read_excel("C:/Users/Arnab/projects/Diagrams_conv_rat/Paschim_Burdwan/DGP/Meeting_15_01_21/raniganj_15_01_21/Raniganj_all_etc.xlsx")
+
+all_plts<- nrow(rnj)
+
+all_rev <- sum(rnj$SD+rnj$RFee)
+
+all_rev_rnj <- sum(rnj$SD+rnj$RFee)
+
+
+rnj_ld_apt <- rnj %>% group_by(Land_or_Apartment) %>% summarise(number_plots_trnsf = n(),
+                                                                    prop_plts = round(number_plots_trnsf/nrow(rnj)*100,digits = 2),
+                                                                    Tot_rv = sum(SD+RFee),
+                                                                    prop_rv= round(Tot_rv/all_rev*100,digits = 2))
+
+knitr::kable(rnj_ld_apt %>% select(-"Tot_rv"),
+             col.names = c("L/A","num_plts","prop_plts","prop_rv"),
+             caption = "Contribution of land and apartment in registration: ADSR Raniganj") %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered",position = "center",full_width = F) %>% 
+  kableExtra::footnote(number = c("L/A = Land or Apartment; L = Land and A = Apartment.",
+                                  "num_plts = Number of plots registered.",
+                                  "prop_plts = Proportion of plots involved.",
+                                  "prop_rv = Proportion of Revenue from respective categories"))
+```
+ 
+
+ It is seen that land contributes **83.66%** of revenue with **95.38%** of plots registration and apartments contribute **16.34%** of revenue involving **4.62%** of plots registration. 
+ 
+ Analysis of Table \@ref(tab:rnjps)  and Table \@ref(tab:rnjt) in which PS wise and mouza wise data (for top 20 revenue earning mouzas) have been grouped and summarised respectively and Fig \@ref(fig:rnjplt)- which shows the distribution of market value across the plot numbers, will gradually show  the areas where apartment registration is concentrated.
+
+ In Table \@ref(tab:rnjps) PS wise  share of revenue and plots involved in registration have been summarised. Also alongside, proportionate share of rural, developing and municipalities of the respective PSs have been looked into.
+
+  
+```{r rnjps,echo=FALSE,message=FALSE,warning=FALSE}
+
+rnj <- read_excel("C:/Users/Arnab/projects/Diagrams_conv_rat/Paschim_Burdwan/DGP/Meeting_15_01_21/raniganj_15_01_21/Raniganj_all_etc.xlsx")
+
+all_plts<- nrow(rnj)
+
+all_rev <- sum(rnj$SD+rnj$RFee)
+
+all_rev_rnj <- sum(rnj$SD+rnj$RFee)
+
+rnj_ps <- rnj%>% group_by(PS_Name) %>% summarise(number_plots_trnsf= n(),
+                                                 prp_plts = round(number_plots_trnsf/all_plts*100,digits = 2) ,
+                                                 Tot_rv = sum(SD+RFee),
+                                                 prop_rv= round(Tot_rv/all_rev*100,digits = 2),
+                                                 rrl = sum(mouza_type == "ROO"),
+                                                 dev = sum(mouza_type == "DOO"),
+                                                 
+                                                 muni = sum(mouza_type %in% c("OM1","OM2","OM3",
+                                                                              "DM1","DM2","DM3",
+                                                                              "RM1","RM2","RM3")),
+                                                 rrl_pr = round(rrl/nrow(rnj)*100,digits = 2),
+                                                 dev_pr = round(dev/nrow(rnj)*100,digits = 2),
+                                                 muni_pr = round(muni/nrow(rnj)*100,digits = 2),
+                                                 rrl_rev = sum((SD+RFee)[(mouza_type == "ROO")]),
+                                                 dev_rev = sum((SD+RFee)[(mouza_type == "DOO")]),
+                                                 muni_rev= sum((SD+RFee)[(mouza_type %in% c("OM1","OM2","OM3",
+                                                                                            "DM1","DM2","DM3",
+                                                                                            "RM1","RM2","RM3"))]),
+                                                 rrl_rev_pr = round(rrl_rev/Tot_rv*100,digits = 2),
+                                                 dev_rev_pr = round(dev_rev/Tot_rv*100,digits = 2),
+                                                 muni_rev_pr = round(muni_rev/Tot_rv*100,digits = 2),
+                                                 land_plots = sum(Land_or_Apartment == "L"),
+                                                 apt_plots =sum(Land_or_Apartment == "A"),
+                                                 Tot_rv_land = sum((SD+RFee)[(Land_or_Apartment== "L")]),
+                                                 Tot_rv_apt = sum((SD+RFee)[(Land_or_Apartment == "A")]),
+                                                 prop_apt_tot = round(sum((SD+RFee)[(Land_or_Apartment == "A")])/all_rev_rnj*100,digits = 2),
+                                                 prop_lnd_tot = round(sum((SD+RFee)[(Land_or_Apartment == "L")])/all_rev_rnj*100,digits = 2),
+                                                 prop_lnd = round(Tot_rv_land/Tot_rv*100, digits = 2),
+                                                 prop_apt = round(Tot_rv_apt /Tot_rv*100,digits = 2))%>% arrange(desc(Tot_rv))
+
+
+
+# rnj_ps %>% colnames()
+
+
+knitr::kable(rnj_ps %>% select(c("PS_Name","prop_rv","prp_plts","rrl_rev_pr","dev_rev_pr","muni_rev_pr","prop_lnd","prop_apt")),
+             col.names = c("PS","prp_rv","prp_plts","rrl_rev_pr","dev_rev_pr","muni_rev_pr","lnd_pr","apt_pr"),
+             align = "cccccc",
+             caption = "PS wise analysis of transaction: ADSR Raniganj") %>% kableExtra::kable_styling(bootstrap_options = "bordered",position = "center") %>% 
+  kableExtra::add_header_above(c("PS and Proportions"= 3, "Revenue Share of Mouza Types"= 3, "Revenue Share of Land /Apartment"=2)) %>% 
+  kableExtra:: footnote(number = c("prp_rv = Proportionate Revenue share;",
+                             "prp_plts = Proportion of number of plots trnsferred;",
+                             "rrl_rev_pr = Contribution towards revenue of this PS of Rural mouzas of this PS;",
+                             "dev_rev_pr = Contribution towards revenue of this PS of Developing mouzas of this PS;",
+                             "muni_rev_pr = Contribution towards revenue of this PS of Municipality mouzas of this PS;",
+                             "lnd_pr = Revenue proportion from land registration;",
+                             "apt_pr = Revenue proportion from land registration;"))
+
+
+# all_rev
+# all_rev_rnj
+```
+
+In Fig \@ref(fig:fgrnjps) PS wise proportion of revenue and transferred plots have been shown.
+
+```{r fgrnjps, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center',fig.cap="Revenue and plots Share of PSs:ADSR:Raniganj",out.width= "70%"}
+
+# For Revenue_PS
+# -----------------
+fig_rev_rnjps <- rnj_ps %>% ggplot(aes(PS_Name,prop_rv,fill = PS_Name,label = prop_rv))+ geom_col()+geom_text_repel(size= 5)+
+  xlab("PS")+ ylab("Revenue Proportion")+ ggtitle("Revenue Share of PSs:ADSR Raniganj")
+              
+# For Plots-count_PS
+# ---------------------
+fig_plts_rnjps <- rnj_ps %>% ggplot(aes(PS_Name,prp_plts,fill = PS_Name,label = prp_plts))+ geom_col()+geom_text_repel(size= 5)+
+    xlab("PS")+ ylab("Plots Proportion")+ ggtitle("Number of Plots Share of PSs:ADSR Raniganj")
+
+#combining Revenue_PS and Plots_ps
+# -----------------------------------
+
+# fig_comb_rnj_ps <- grid.arrange(fig_rev_rnjps,fig_plts_rnjps)
+
+
+#fig_comb_rnj_ps
+
+grid.arrange(fig_rev_rnjps,fig_plts_rnjps)
+```
+   From Table \@ref(tab:rnjps) and from Fig \@ref(fig:fgrnjps) it is found that
+  
+  * **Raniganj** contributes most to the revenue (**39.06%**);
+     - of it **'Municipality' mouzas contribute 87% while 'Rural' mouzas contribute 13%**.
+     - Apartment registration contributes **36.41%** of the revenue coming from Raniganj PS.
+  * **Jamuria**'s revenue share is **29.92%**;
+     - Respective share of Rural,Developing and Municipality mouzas are **39%**,**1.43%** and **59.6%** respectively;
+  * Andal's revenue share is **23.66%**;
+    - Respective share of rural,developing mouzas are 96.9% and 3.14% respectively. There is municipalities in Andal PS.
+    - Apartment registration contributes **8.32%** of the revenue coming from Raniganj PS.
+   * Pandabeswar's share of revenue is **7.36%**;
+     - All of it comes from rural mouzas as there are no developing and municipality mouzas in Pandabeswar PS.
+  * **Jamuria registers most number of plots(37.63%), followed by Raniganj(27.31%),Andal(22.77%) and Pandabeswar(12.29%)**.
+  * Apartment registration in Jamuria and Pandebswar is not significant.
+  
+
+   In mouza wise summary, mouzas with respective number of plots transferred during this period, their proportionate number to that of total, proportinate revenue, average area of land transfer^[**Average are of land transfer is generally lower for more urbanised mouzas- areas. As more urbanised the area is, more would be the demand on land and less the availability.**],percentage of plots of that particular mouza registered for lands and for apartments, proportionate share of revenue from land and from apartment. Also it has been checked how important is the role of apartmenent registration for its jurisdiction. For this purpose, proportionate number of apartment transfers of each mouza  to the total number for apartment registration of entire jurisdiction and the proportionate revenue from apartment to revenue from all apartment transfers have been checked out.(See Part IV of Tab \@ref(tab:rnjt)).
+
+In Table \@ref(tab:rnjt) top 20 mouzas which contribute most to revenue have been listed. Fig \@ref(fig:rnjgr) shows these mouzas with their respective revenue and plots share.In it different mouza-types have been color-coded.
+
+  
+```{r rnjt,echo=FALSE,message=FALSE,warning=FALSE}
+
+rnj_base <- read_excel("C:/Users/Arnab/projects/Diagrams_conv_rat/Paschim_Burdwan/DGP/Meeting_15_01_21/raniganj_15_01_21/raniganj_base_gr.xlsx")
+
+knitr::kable(rnj_base %>%  select(-c(Tot_rv,Tot_rv_land,Tot_rv_apt)) %>% head(20),
+             col.names = c("PS","Mty","Mcd","Mouza","nPts","Pr_pts","Pr_rv","avAR","nldpts","nappts","nld_pr","nap_pr","rld_pr","rap_pr","Tnap_pr","Trap_pr"),
+             caption = "Top Mouzas At a Glance: ADSR Raniganj",
+             align = "lcccccccccccc") %>% 
+  
+  kableExtra::kable_styling(bootstrap_options = "bordered",position = "left")  %>% 
+  kableExtra::add_header_above(c("I:PS-Mouza"=4,"II:Share to Total"=4,"III:Distribution:Land-Apt"=6,"IV:Apt-Anls"=2)) %>% 
+  kableExtra::add_footnote(c("It has been divided into 4 parts
+                             I:PS-Mouza = Information regarding Mouza,JL-No,respective PS,
+                             II:Share to Total= Contribution of the particular towards total number of plots registered and total revenue,
+                             III:Distribution:Land-Apt= Contribution of land and apartment towards plots registered and revenue of this mouza
+                             IV:Apt-Anls= Contribution of Apartments towards Total number of registration and revenue",
+                             "PS= PS-Name,Mcd = Mouza-code geneally JL No,Mty= Mouza-Type,,Mouza= Mouza-Name;",
+                             "npts= Total number plots registered in this mouza,Pr-pts= Proportionate number to total,Pr_rev=Proportionate revenue,
+                             avAR = Average area of land transferred in decimal,
+                             nldpts= Number of land plots registered, nappts= that of apartment,
+                             nld_pr = Land plot proportion to this mouza,nap_pr = Apartment plot proportion,
+                             rld_pr = Revenue proportion of land to this mouza,
+                             rap_pr = Apartment Revenue proportion;",
+                             "Tnap_pr = Apartment number contribution of this mouza to Total apartment Registration,
+                             Trap_pr = Apartment revenue contribution of this mouza to Total Registration."))
+
+```
+  
+  
+  
+
+In Fig \@ref(fig:rnjgr) top 20 revenue contributing mouzas along with their proportionate share of revenue and that of numbers involved in transaction have been plotted.
+
+```{r rnjgr, fig.align='center',fig.cap= "Important Mouzas: ADSR Raniganj", echo=FALSE,warning=FALSE,message=FALSE,out.width="80%"}
+ knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/rnj_mz.png")
+```
+
+
+From Table \@ref(tab:rnjt) & Fig \@ref(fig:rnjgr) above it is found that:
+
+* These 20 mouzas are mostly situated around [Raniganj town](https://www.google.co.in/maps/place/Raniganj,+West+Bengal/@23.621244,87.1123013,4932m/data=!3m1!1e3!4m13!1m7!3m6!1s0x39f7112da2ee0445:0x6a43617f61b71bbc!2sSearsole+Rajbari,+Raniganj,+West+Bengal+713358!3b1!8m2!3d23.6376159!4d87.1129802!3m4!1s0x39f7113dd3eda163:0x1155c1d2783fcf55!8m2!3d23.623387!4d87.114265?hl=en&authuser=0), [Andal area](https://www.google.co.in/maps/place/Andal,+West+Bengal/@23.5820283,87.1981321,4933m/data=!3m1!1e3!4m5!3m4!1s0x39f76d86040e8eb7:0x5bce4c197f2b03a9!8m2!3d23.5815244!4d87.1910184?hl=en&authuser=0) and [Jamuria town](https://www.google.co.in/maps/place/Jamuria,+Asansol,+West+Bengal+713336/@23.6996833,87.0742844,4929m/data=!3m1!1e3!4m5!3m4!1s0x39f71790fb900d33:0xa0f16babb6f7ffc1!8m2!3d23.7060688!4d87.0774107?hl=en&authuser=0). Also NH2 which runs across this jurisdiction has an important part in development of this area.
+* 3 mouzas namely, **Raniganj Municipality (14.76%), Searsole(7.77%) and Amrasata(6.21%)** contributes most towards the revenue of ADSR Raniganj.
+* All of these are 'Municipality' mouzas.
+* Together they contribute about 12% of total number of transferred plots,
+* Almost 50% of their revenue comes from apartment registration;
+* Together they contribute almost 87% of the revenue coming from apartment registration;
+* Apart from them, **Bhadur** of Andal PS is another mouza whose almost 50% of revenue comes from apartment registration; 
+* **Ramprasadpur(2.38 dec), Raniganj Municipality(2.66 dec),Baska(3.24 dec),Andal(3.58 dec), Bhadur(3.66 dec), Dubchururia(3.70 dec),Seasole(4.26 dec),(excepting Raniganj Municipality and Searsole all fall in Andal PS)** having low average area transfer. 
+* From Mouza-code it appaears all thesse Andal PS mouzas are more or less adjacent .It is supported by the [Google imagery](https://www.google.co.in/maps/place/Andal,+West+Bengal/@23.5820283,87.1981321,4933m/data=!3m1!1e3!4m5!3m4!1s0x39f76d86040e8eb7:0x5bce4c197f2b03a9!8m2!3d23.5815244!4d87.1910184?hl=en&authuser=0) which says that they are situated in and around Andal Railstation and Andal 'More' (on NH-2) area which are well-marked urbanised area.^[Hence average area of transferred land for an area can be an important indicative factor for identifying an urbanised area.]
+* Of these top mouzas, mouzas of Jamuria and Pandabeswar PS tend to transfer more area of land per transaction.
+
+
+Of these mouzas **_Raniganj Municipality, Searsole and Amrasata_** have been taken up for further study of **spatial distribution of market-value** across the plot numbers and  Fig \@ref(fig:rnjplt) has been prepared. In it **each dot represent a plot-number involved in transaction. Size of the dot varies with change in market-value - with size growing bigger for larger market-value**.  _Plots involving land and apartment have also been coloured differently where transaction of land is represented by the blueish colour and that of apartment by the reddish one_.
+
+```{r rnjplt, fig.cap= "Market Value Distribution of Selected Mouzas  across Transferred Plots",echo=FALSE, warning=FALSE,message=FALSE, out.width="170%",fig.align='center'}
+
+
+ #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # Raniganj Municipality: Market_value-document Distribution:Transferred documents
+    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+     rmu <-rnj %>% filter(Mouza_Name == "Raniganj  Municipality") %>% 
+       ggplot(aes(plot_no, market_value, color = Land_or_Apartment))+geom_point(aes(size= market_value))+ 
+       scale_x_continuous(breaks = seq(from= 1, to= 7000,by =100))+
+       theme(axis.text.x = element_text(angle = 90,hjust = 1))+
+       scale_y_log10(limits = c(1.0e+04,1.5e+07))+
+       ggtitle("Plotwise Market Value Distribution:Mouza- Raniganj Municiapality")+
+       annotate("text",
+                label = "*Dots denote plots involved in the transactions", x= 4800, y= 1.2e+04, size = 5)
+       
+     
+     
+     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+     # Searsole: Market_value-plot_number Distribution: Transferred documents
+     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+     rse <- rnj %>% filter(Mouza_Name == "Searsole") %>% 
+       ggplot(aes(plot_no, market_value, color = Land_or_Apartment))+geom_point(aes(size= market_value)) +  
+        scale_x_continuous(breaks = seq(from= 1, to= 6000,by =100))+
+        theme(axis.text.x = element_text(angle = 90,hjust = 1))+
+         scale_y_log10(limits = c(1.0e+04,2.5e+07))+
+        ggtitle("Plotwise Market Value Distribution:Mouza- Searlsole")+
+              annotate("text",
+                label = "*Colors denote land and apartments", x= 4850, y= 1.5e+04, size= 5)
+
+     
+       
+       
+       #' @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+       #'   Amrasata:Market_value-plot_number Distribution: Transferred documents
+       #' @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        
+         rnj_am <- rnj %>% filter(Mouza_Name == "Amrasata") %>% 
+         ggplot(aes(plot_no, market_value, color = Land_or_Apartment))+geom_point(aes(size= (market_value)))+
+         scale_x_continuous(breaks = seq(from= 1, to= 3500,by =100))+
+         theme(axis.text.x = element_text(angle = 90,hjust = 1))+
+         scale_y_log10(limits = c(1.0e+05,2.0e+07))+
+           ggtitle("Plotwise Market Value Distribution:Mouza- Amrasata")
+         
+         
+      knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/rnj_plts.png")
+
+         
+         
+```
+
+It is found that
+
+* **Registration generally tends to be concentrated in few pocekts**.
+* For **<u>Raniganj Municipality</u>** these pockets lay around the plot-range of
+  - **1-250,400-600,800-900,around 1200**;
+  - sparsely around **1400,1600**;
+  - around **2500-2600,2700-2900**;
+  - sparsely around **5000-5100**;
+  -around **5700,6600** etc.
+  - more **higher market-values** are seen near range **1-250**, around **1900** and around **2900**, which sometimes exceeded Rs **1Cr**;
+  - **apartment** registration concentrated around plot ranges **1-250,2700-2900,around 5100,and spasely around 3700-4200**;
+* For **<U>Searsole</u>** 
+  - concentration is witnessed around **1-100,around 400,around 1100-1200, around 2100-2600 and 4700-4900**;
+  - **apartment** registration is seen **around 2100,around 2300,around 2500 and around 2800 and sparsely around 4800**;
+  - **high values** are seen near plots **100,700,4900**;
+* For **<u>Amrasata</u>** number of plots are less than the previous two mouzas;
+   - concentration however is seen in the plot-range **1-300,around 500, sparsely in 1000-1700, around 2400,around 2900, more concentrated around 3000-3100**.
+   - **apartment** registration is seen around **300,1350,1400,2900,3000-3050**;
+   - **high-valued** transaction happened around **100,500,1200 and 3000**.
+  
+  
+
+
+#### <U>**Analysis of Proposed Land use practice:**</u>{#secprop} 
+
+ Registration data of ADSR Raniganj has been analysed to get insight of the use of proposed land uses during registration. Also comparative analysis with adjecent offices of ADSR Asansol and ADSR Durgapur has been taken up.
+ 
+ Primarily we can start with the number of land groups present in these offices.(For detailed discussion please refer to \@ref(seccr)). Table \@ref(tab:pmgr) shows the landgroups of the offices of Paschim Burdwan. Primarily, it is seen that ADSR Raniganj has much more larger landgroups(34) than other offices.
+
+```{r pmgr,echo=FALSE,warning=FALSE,message=FALSE}
+
+knitr::kable(lg %>% filter(District_Code == "23"),
+             caption = "Number of landgroups: Offices of Paschim Buradwan",
+             col.names = c("District_code","Disrict","ro_code","office","num_of_landgrps"),
+             align = "ccccc") %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered", position = "center") 
+
+```
+  
+  
+Then proposed landuses used for ADSR Raniganj and ADSR Asansol have been analysed. Fig \@ref(fig:comrl) depict a comparative analysis of proposed landuse used in transactions for rural mouzas of ADSR Raniganj and ADSR Asansol. In it heights of the columns represent the proportion of use in transaction, each colour represent a different use and numbers besides the columns represent the respective conversion ratios.
+
+
+```{r comrl,fig.align='center', fig.cap= "Comparative Analysis of Proposed Uses for Transfer: Rural Mouzas: ADSR Raniganj", echo=FALSE,warning=FALSE, message=FALSE, out.width="100%"}
+
+    knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/com_rrl.png")
+
+
+
+```
+ 
+  Fig \@ref(fig:comrl) shows that-
+  
+  * Much more landuses were used in ADSR Raniganj compared to ADSR Asansol- as seen from the colour codes.
+  * Main landuses for both these offices revolve around different types of agrilands like Baid, residential like Bastu,Vastu etc,
+  Industrial uses like Land for industrial use etc.
+  * Commercial types for both the offices have not been used much. It is expected as generally commercial transfers remain less in number compared to agri or residential purposes.
+  * ADSR Raniganj shows use of different identical or semi-identical landuses which can be easily clubbed and the number can be brought down as ADSR Asansol.
+  * **large number of variation in the usages for ADSR Raniganj clearly shows that proposed land uses are relied heavily upon to reach the market-value of property**.
+  
+  
+  Similar analysis has been undertaken for a municipality mouza each for ADSR Raniganj,ADSR Asansol and ADSR Durgapur. 
+  For **ADSR Raniganj,mouza Raniganj Municipality; for ADSR Asansol, mouza Asansol Municipality; and for ADSR Durgapur, mouza Viringi** have been chosen respectively. 
+  In Table\@ref(tab:grmu) a comparative analysis has been made by sorting out the  conversion ratios used during land transfer of these mouzas. Also in it, number of uses belong to these ratios  have been summarised. In Fig \@ref(fig:crmu), these data has been plotted.
+  
+```{r grmu,echo=FALSE,warning=FALSE,message=FALSE}
+
+#Importing ADSR Asansol  transaction data
+
+asn_etc_all <- read_excel("C:/Users/Arnab/projects/Diagrams_conv_rat/Paschim_Burdwan/DGP/Meeting_15_01_21/asansol_15_01_21/asansol_etc_all.xlsx")
+
+#Importing ADSR Durgapur transaction data
+
+dgp_all_etc <- read_excel("C:/Users/Arnab/projects/Diagrams_conv_rat/Paschim_Burdwan/DGP/dgp_all_etc.xlsx")
+
+
+# prepration of mouza: Asansol Municipality data
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+
+#Revenue from land in Asansol Municipality
+
+asn_mu_rev <- asn_etc_all %>% mutate(reven = (SD+RFee)) %>% 
+     filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Asansol  Municipality") %>% pull(reven) %>% sum()
+
+#Proposed landuses used for transactions in Asansol Municipality
+
+   asn_mu_rev1 <- asn_etc_all %>% filter(Proposed_Land_use_Name != "NA" & Mouza_Name ==  "Asansol  Municipality") %>%
+     group_by(Proposed_Land_use_Name,CONV_RATE_MUNICIPALITY1) %>% 
+     summarise(num= n(),
+               rev = sum(SD+RFee),
+               num_prop = round(num/nrow(asn_etc_all %>% filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Asansol  Municipality"))*100,digits = 2),
+               rev_prop = round(rev/asn_mu_rev*100,digits = 2)) %>% 
+     rename(ratio = CONV_RATE_MUNICIPALITY1) %>% arrange(desc(rev_prop))
+   
+# Number of groups actually used in transactions: Asansol Municipality 
+   
+   asnGr <-asn_mu_rev1 %>% group_by(ratio) %>% summarise(Number_of_uses= n())
+  
+   
+    # Plotting  landgroups
+   asnplt <-asnGr %>% ggplot(aes(ratio,num,fill=as.character(ratio),label = num))+geom_col()+geom_text_repel()+
+               ggtitle("Conversion ratios used in Asansol Municipality Mouza: ADSR Asansol")+
+          scale_x_continuous(breaks  = seq(from= 1, to= 40, by= 5 ))
+
+   asnmu <- asn_mu_rev1 %>% select(-c(num,rev)) %>% rename(use = Proposed_Land_use_Name,
+                                                        prpnum = num_prop,
+                                                        prprv = rev_prop)
+   # prepration of mouza: Raniganj Municipality data
+  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#  
+   
+#Revenue from land in Raniganj Municipality
+   
+ rmu_rev <- rnj %>% mutate(reven = (SD+RFee)) %>% 
+     filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Raniganj  Municipality") %>% pull(reven) %>% sum()
+   
+#Proposed landuses used for transactions in Raniganj Municipality
+
+   rmu1<- rnj %>% filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Raniganj  Municipality") %>%
+     group_by(Proposed_Land_use_Name,CONV_RATE_MUNICIPALITY2) %>% 
+     summarise(num= n(),
+               rev = sum(SD+RFee),
+               num_prop = round(num/nrow(rnj %>% filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Raniganj  Municipality"))*100,digits = 2),
+               rev_prop = round(rev/rmu_rev*100,digits = 2)) %>% 
+               rename(ratio = CONV_RATE_MUNICIPALITY2) %>% arrange(desc(rev_prop))
+
+   rmu_table <- rmu1 %>% select(-c(num,rev)) %>% rename(use = Proposed_Land_use_Name,
+                                                        prpnum = num_prop,
+                                                        prprv = rev_prop)
+# rmu_table   
+  # Number of groups actually used in transactions: Asansol Municipality 
+
+    
+   rnjGr<- rmu1 %>% group_by(ratio) %>% summarise(Number_of_uses=n())
+ 
+   # Plotting  landgroups
+   
+   rnplt<- rnjGr %>% ggplot(aes(ratio,num,fill=as.character(ratio),label = num))+geom_col()+geom_text_repel()+
+     ggtitle("Conversion ratios used in Raniganj Municipality Mouza: ADSR Raniganj")+
+     scale_x_continuous(breaks  = seq(from= 1, to= 40, by= 1 ))
+   
+  
+    # prepration of mouza: Viringi data
+  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#  
+   
+#Revenue from land in Viringi
+    
+   vir_rev <- dgp_all_etc %>% mutate(reven = (SD+RFee)) %>% 
+     filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Viringi") %>% pull(reven) %>% sum()
+ 
+   #Proposed landuses used for transactions in Viringi
+     
+   vir1 <- dgp_all_etc %>% filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Viringi") %>%
+     group_by(Proposed_Land_use_Name,CONV_RATE_MUNICIPALITY1) %>% 
+     summarise(num= n(),
+               rev = sum(SD+RFee),
+               num_prop = round(num/nrow(dgp_all_etc %>% filter(Proposed_Land_use_Name != "NA" & Mouza_Name == "Viringi"))*100,digits = 2),
+               rev_prop = round(rev/vir_rev*100,digits = 2)) %>% 
+     rename(ratio = CONV_RATE_MUNICIPALITY1) %>% arrange(desc(rev_prop))
+
+   
+   # Number of groups actually used in transactions: Viringi
+  
+   virgr<- vir1 %>% group_by(ratio) %>% summarise(num= n()) 
+
+  virplt<-  virgr %>% ggplot(aes(ratio,num,fill=as.character(ratio),label = num))+geom_col()+geom_text_repel()+
+     ggtitle("Conversion ratios used in Viringi Mouza: ADSR Durgapur")+
+         scale_x_continuous(breaks  = seq(from= 1, to= 13, by= 0.5 ))
+
+  
+  vir_table <- vir1 %>% select(-c(num,rev)) %>% rename(use = Proposed_Land_use_Name,
+                                                        prpnum = num_prop,
+                                                        prprv = rev_prop)
+  # vir_table
+  
+  knitr::kable(list(asnGr,rnjGr,virgr),
+               caption = "Number of groups for Municipalities: Paschim Burdwan offices",align = "ccc") %>%
+    kableExtra::kable_styling(bootstrap_options = "bordered",position = "center",full_width = F,font_size = 14) %>% 
+    kableExtra::add_header_above(c("Mouza:Asansol Municiaplity"= 1,
+                                   "Mouza:Raniganj Municipality"=1,
+                                   "Mouza:Virigi"=1)) %>% 
+     kableExtra::add_header_above(c("Number of Conversion ratio Groups used" =3))
+    # %>%
+    #  kableExtra::footnote(c(""))
+
+```
+
+It is seen that 
+  
+  * In ADSR Raniganj much more number of ratios (groups) have been used;
+  * The number of ratios used for mouza **Raniganj Municipality of ADSR Raniganj is 10**;
+  * The number of ratios used for mouza **Asansol Municipality of ADSR Asansol is 5**;
+  * The number of ratios used for mouza **Viringi of ADSR Raniganj is 6**;
+  * Expectedly, for Raniganj Municipality  much more number of groups exist. **For example- 4 groups exist between ratios 4 to 8.**
+  * Hence, for ADSR Raniganj market value determination is much more reliant on the use of conversion ratios- which may lead to more subjectivity.
+  
+```{r crmu, fig.cap= "Conversion Ratios used for Municipality mouzas: Paschim Burdwan", fig.align='center', echo=FALSE,warning=FALSE,message=FALSE}
+
+    knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/pm_mu_gr.png")
+
+
+
+```
+  
+ 
+
+In Table\@ref(tab:usemu) all the conversion ratios used for land transfers in these mouzas, their proportionate number, proportionate revenue coming from these ratios have been summarised.
+
+```{r usemu,echo=FALSE,warning=FALSE,message=FALSE}
+ knitr::kable(list(asnmu,rmu_table,vir_table),caption = "Comparative analysis of Proposed land uses used in Paschim Burdwan", align = "ccc") %>% 
+    kableExtra::kable_styling(bootstrap_options = "bordered", position = "center") %>% 
+    kableExtra::add_header_above(c("Mouza:Asansol Municipality:Asansol" = 1, "Mouza: Raniganj Municipality:Raniganj"=1,"Mouza: Viringi:Durgapur"=1)) %>% 
+    kableExtra::footnote(number = c("use = Proposed Land Use name used during Transaction;",
+                                    "ratio=  Respective conversion Ratio; ",
+                                    "prpnum = Proportionate number of this particular use for this mouza's land transaction;",
+                                    "prprv = Proportionate revenue coming from this use for this mouza"))
+  
+```
+  
+  From Table\@ref(tab:usemu), it is seen that:
+  
+* for all these offices in municipality mouzas _dominant proposed land uses_ are variants of 'Residential uses' like **'Bastu','Vastu'**;
+* Together these two contribute over 80% of total land transfers and about 75% of revenue from the respective mouza's land transfers;
+* Other dominant uses are **'Commercial','Semi commercial'** usages,together these two contribute about 10-15%.;^['other commercial usage' for semi-commercial in case of ADSR Raniganj.]
+* For Raniganj Municipality mouza, uages like _'Path(ratio=13)','Patit( ratio= 10)'_have been found to be used. 
+* These usgaes are around _'Bastu'/'Vaastu'(ratio=12)_, and can easily be clubbed with 'Bastu'.
+* 'Patit'seems to have been used for less-developed plots near residential areas.
+* Rather than this, the concerned plots can be identified properly and their respective basevalues can be updated accordingly;
+
+
+#### **<U>Assessment of Registration pattern:</u>**{#secpat}
+
+Registration data of select offices can be taken up to have insights over the distribution of different transaction types, seasonal distribution of transactions, distribution of registration types.
+
+##### **<U>Transaction types:</U>**
+
+```{r tabtrn,echo=FALSE,warning=FALSE,message=FALSE}
+rnj_aal_rev <-  rnj %>% mutate(rev = SD+RFee) %>% pull(rev) %>% sum()
+   
+rnj_tr <- rnj %>% mutate(rev = (SD+RFee)) %>% 
+     group_by(Transaction_Name,Transaction_code) %>% 
+     summarise(number = n(),
+               tot_rv = sum(SD+RFee),
+               pernum = round(number/nrow(rnj)*100,digits = 2),
+               per_rv = round(tot_rv/rnj_aal_rev*100,digits = 2)) %>% arrange(desc(number))
+
+
+knitr::kable(rnj_tr %>% select(-c(tot_rv)) %>% head(15), align = "lclr",
+             caption = "Different Transactions and their Contribution:ADSR Raniganj") %>% 
+  kableExtra::kable_styling(bootstrap_options = "bordered",position = "center",full_width = F) %>% 
+  kableExtra::add_header_above(c("Transactions" =2, "Contribution" = 3)) %>% 
+  kableExtra::footnote(number= c("number = Number of plots involved in the respective transactions;",
+                                 "tot_rv = Total revenue from this particular transaction;",
+                                 "pernum = Proportion to total number of transactions;",
+                                 "per_rv = Proportion of revenue to tal revenue"))
+
+```
+
+```{r trndet,fig.cap="Different Transactions:ADSR Raniganj",fig.align='center',echo=FALSE,warning=FALSE,message=FALSE}
+    
+      knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/trns.png")
+
+```
+
+These show "[0101] Sale, Sale Document" and "[0201] Gift, Gift  in Favour of family members" are two most dominant forms of registration in terms of number (74.5% and 18.5% respectively), as well as revenue(91.2% and 3.93% respectively).^[And these numbers for  rest of the offices of Paschim Burdwan District are as follows:
+**<u>ADSR Durgapur</u>**:  In terms of **number of registration(80.6%, 12.8% respectively)**, in terms of **revenue (96.0% and 1.34% respectively)**.
+**<u>ADSR Asansol</u>**: In terms of **number of registration(73.2%, 14.8% respectively)**, in terms of revenue**(91.6% and 1.34% respectively)**; and slightly significant numbers for **[0139] Sale, Development Power of Attorney (6.09% and 0.34% respectively)**.
+**<u>ADSR Kulti</u>**: In terms of **number of registration(83.3%, 11.0% respectively)**, in terms of **revenue(94.6% and 2.72% respectively)**;and slightly significant numbers for[0139] **Sale, Development Power of Attorney (2.66% and 0.24% respectively)**.]
+
+
+##### <u>**Seasonal and time distribution of transactions:**</u>
+
+Registration data of the select offices can taken up for exploring the distribution of transactions across months or weekdays or even across office- hours. These may help us -
+
+ * identifying the existence of any unique local pattern prevalent in the offices apart from corroborating the general understanding that registration peaks generally around months of July-August, November-December, February- March which largely coincide with Bengali months of **'Shravan','Agrahayan','Magh','Falgun'** respectively;
+ * exploring the existence of any pattern in these offices on to which days more registration occurs;
+ * to explore the hourly pattern of registration  and thereby to assess the pattern of footfall in a office during the office- hour.
+ 
+ For this analysis registration data of all the offices of Paschim Burdwan district, namely ADSR Asansol, ADsR Durgapur,ADSR Raniganj and ADSR Kulti have been taken up and analysed in comaprison to each other accordingly.
+
+  **<u>A.Month wise Distribution</u>**:
+  
+  Here registration data of these offices have been analysed month wise and Figure \@ref(fig:mnt) has been created by placing data of all offices in one.
+
+```{r mnt,fig.align='center',fig.cap="Registration Across Months: Paschim Burdwan",echo=FALSE,warning=FALSE,message=FALSE}
+    knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/mnts_reg.png")
+
+```
+
+
+Figure \@ref(fig:mnt) shows the distribution of the registration across months of the offices of the Paschim Burdwan district.
+
+ * It shows that  during months **December, July, August, February,November** generally more footfalls occur in ADSR Raniganj and ADSR Durgapur.^[These by and large coincide with the Bengali crop cycles and auspicious months: 'Magh,Falgun': Mid Feb to March, 'Ashar-Shravan: Mid June to Mid August' with July tends to be the busiest in registration offices; 'Agrahayan': Mid November to mid December']. 
+ * However, September tops the list for ADSR Asansol which is not the case for others.
+
+
+
+  **<u>B.Weekday wise Distribution</u>**
+  
+```{r wd,fig.align='center',fig.cap="Registration Across Weekdays:Paschim Burdwan",echo=FALSE,warning=FALSE,message=FALSE}
+    knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/wdy.png")
+
+```
+  Figure \@ref(fig:wd) shows the registration across weekdays in the offices of the Paschim Burdwan district.
+  
+  * It shows that generally on Fridays more number of registration occur.
+  * However, for ADSR Kulti Wednesdays are more important in this respect than other days. 
+  * In ADSR Raniganj on Thursdays slightly less registration occurs with comparison to others, however in other offices- specially in ADSR Asansol and in ADSR Durgapur, there is not much difference in number of registration on Thursdays with other days immediately preceeding.
+  
+  
+  
+  **<u>C:Hour of Registration</u>**
+  
+  Hourly distribution of registration is a _key indicator of the office activity related to public interaction_. Generally, it can be assumed that time of presentation  of a document precedes its time of registration by about 45 minutes to one hour. 
+  Hence hour of registration of documents in a office indicate the hour of presentation also. Moreover, **number of transactions remaining high over longer intervals might indicate the sustained congregation of registrant public over a longer period of time in the office**.In Figure \@ref(fig:hr) registration across office hours in the offices of the Paschim Burdwan has been plotted.
+
+
+
+```{r hr,fig.align='center',fig.cap="Registration across office hours",echo=FALSE,warning=FALSE,message=FALSE}
+       knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/hr.png")
+
+```
+
+From Fig \@ref(fig:hr) it can be discerned that
+
+* Number of registration gets to peak during **1 pm to 2 pm** for **ADSR Asansol and  ADSR Durgapur**. It means that **presentation of deeds tops in these offices between 12:30 pm to 1:30 pm**. It indicates to following of more organised practices related to registration in these offices and most footfall occur genrally around 1-2 pm.
+
+* For **ADSR Raniganj** number of registration gets high values during **1-4 pm -with 2-3 pm gets marginally higher number- _which means more congregation of people in the office during 1-3 pm_**.Keeping in view of the fact that both ADSR Asansol and ADSR Durgapur register much more documents annually than ADSR Raniganj, it indicates to following of lesser organised practices related to registration compared to ADSR Asansol and ADSR Durgapur.
+
+* Interestingly,for **ADSR Kulti number of registration gets to peak during 11-12 pm**. In this regard it may be mentioned that ADSR KUlti has been created by carving out the jurisdiction of erstwhile ADSR Asansol and  persons related to registration are mainly based on Asansol - 15 km away from Kulti. _It is possible then that people from Asansol coming with all prepared deeds, present it early at ADSR Kulti and return to Asansol as early as possible for attending other office works_. Opening of DSR Paschim Burdwan then only for this reason may dent the registration at ADSR Kulti considerably and this aspect may be explored with later data.
+
+
+#### <u>**Combining the Registration data with othet available data :**</u>{#seccomb}
+
+Registration data as discussed above can be analysed interacively with different sorts of data available on different 
+platforms. These data can be ranged from available GIS data to ROR data, census data, road information if available from PWD,
+GST data with vendor information , data from agriculture department showing cropping intensity etc.
+These can render insights to know the nature of an area and to assess logically its potential as residential, agricultural, commercial or industrial area.
+
+**<u>I.GIS data</u>**-
+
+DoRSR has set up its own GIS project. 
+
+* In it [Shape files](https://en.wikipedia.org/wiki/Shapefile), containing the basic plot information-such as plot-number,area of all mouzas as available from L& LR department, Govt. of West Bengal, are being [georeferenced](https://en.wikipedia.org/wiki/Georeferencing) at HQ level^[Desktop georeferencing is being carried out at the HQ level in respect of available ArcGIS satellite imageries.].
+* Also shape files of metal rd,SH, NH as on 2014, have been made available to DoRSR and those have been put in one separate layer alon with the georefernced plot level shape files.
+* The registration data as discussed earlier, ROR information data have been put into the attributes of the GIS data received and made ready for on-the-click view (See Figure \@ref(fig:gis)).
+* Also using GIS tools, areal distances of all plots from selected fetatures^[as for Dakshin Dinajpur district, distance from nearest metal roads and markets of all plots have been calculated, while for Paschim Burdwan District distance from nearest metal road has been calculated.] can be calculated.
+* Some basic analytics features are available in the GIS platform which can be helpful in visualising the output over maps;
+* Also all the data put into GIS attributes can be exported  in excel or csv format which can be taken up for further analysis;
+* Also R or Python scripts used in these analysis can be put in the GIS directly for visualising the outputs over maps.
+
+
+
+```{r gis,fig.align='center',fig.cap="GIS mapping at DoRSR",echo=FALSE,message=FALSE,warning=FALSE}
+       knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/dgp_etc.png")
+
+```
+ **<u>II. ROR data</u>**
+  
+  ROR data acquired from L&LR department can be analysed simultaneously with registration data. Even GIS can render useful information like distance from  selected features like 'Bastu' plot,'Metal Road' etc. Land classes can then be grouped and summarised over these distances to get the picture of general location  of these  classes relative to these features.
+  Table \@ref(tab:ror) is an example of such grouping. It lists 20 classes- sorted alphabetically, under the jurisdiction of ADSR Durgapur.
+  
+ 
+```{r ror,echo=FALSE,message=FALSE,warning=FALSE}
+ #ROR Analysis
+    ##############
+    # Working with DGP ROR all distances data
+    #########################################
+    
+    dgp_jur <- read_csv("F:/24Feb21/2302_DurgapurFaridpur_Export.csv")
+    
+    #dgp_jur %>% view()
+    
+    ##grouping the ror land classes Summarising on median distance from bastu plots
+#' @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   
+    ## Summarising on median distance:More Preferable
+    #################################################
+    
+     dgp_dist <- dgp_jur %>% group_by(Class_na_1) %>% 
+      summarise(number = n(),
+                median_bastu = round(median(Bastu_Distance1),digits = 2),
+                median_metal_rd = round(median(NEAR_DIST_frm_metal_rd),digits = 2)) 
+
+    
+
+    knitr::kable(dgp_dist %>% head(20), col.names = c("Land Class","Number","Mid_Bastu","Mid_Mtl_Rd"),
+                 caption = "Different land classes under ADSR Durgapur and distances from Bastu, Metal_Rd:Example", 
+                 align = "cccc") %>% 
+      kableExtra::kable_styling(bootstrap_options = "bordered",position = "center",full_width = F) %>% 
+      kableExtra::footnote(number = c("Land Class= Land Class as in ROR",
+                                      "Number = Respective number of each land class",
+                                      "Mid_Bastu = Median distance from nearest Bastu plots",
+                                      "Mid_Mtl_Rd = Median distance from neasest Metal Road"))
+```
+ As these classes are put into groups and thereby conversion ratios by ADSRs - this analysis can be helpful be for preparation of proposal on conversion ratios by the ADSRs.
+ 
+ Fig \@ref(fig:bstudist) has been prepared by plotting the different land classes which are located within 100 mtrs (median distance) of 'Bastu' class.Each class is shown by a separate point and their sizes vary with the change in their respective number of occurrence in ROR data. 
+ 
+```{r bstudist,fig.align='center',fig.cap="Land classes within 100 mtrs of Bastu Plots:ADSR Durgapur",echo=FALSE,message=FALSE,warning=FALSE}
+         knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/bastu_dist1.png")
+
+```
+ 
+
+ <u>**III.Census Data**</u>
+  
+  Census data can be analysed with respect to the population of a particular area and can be explored whether number of transactions or market-value of immovable properties have any bearing with it. 
+  To check primarily, census data (2011) of areas under ADSR Raniganj have been taken up and in Fig \@ref(fig:census) most populous areas with their respective population have been plotted.^[Here **CT**s are ['Census Town']("https://en.wikipedia.org/wiki/Census_town"), based on some quality of population and workforce residing in an area it can be termed as a 'Census Town'.]
+  
+```{r census, fig.align='center',fig.cap="Populous areas under ADSR Raniganj",echo=FALSE,message=FALSE,warning=FALSE}
+
+    knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/census_rnj.png")
+
+
+
+```
+  
+  It is found that roughly, **_60%_** of the places picked in Fig \@ref(fig:census) coincide with the mouzas with most registrations under the jurisdiction of ADSR Raniganj. (Please refer to Fig \@ref(fig:rnjgr)). Hence there is ample scope of exploring this data along side,in analysis of market-value for **'Scientific Framework'**.
+  
+  Similarly, **GST data with details of dealers, the data from Agriculture department showing the cropping intensity, the data from PWD deapartment with road-details** can be helpful in this regard. 
+  
+  
+Objective would be to explore wheather there are any relationship with market value and with them;
+
+#### **<u>Building MV Model</u>:**{#secmod}
+
+ Generally for market- value determination of a property or preparation of MVDB ROs keep in mind a number of implicit or explicit factors which may be responsible for the market value of property. Although, ROs employ their field experience and application of mind- even the best practices may be very subjective. 
+ However, these factors or variables are very much quantifiable . They can be either continuous - i.e, measurable on any continuous scale like distance; or, categorical - i.e few qualities that can be grouped or ordered into some measurable quantities; or, binary - i.e, when presence of absence of any particular quality can be described by 1 or 0. 
+ Then collecting the data of market-value of property in a mixed way - 
+ 
+ * by independent means from field with the help of survey;
+ * and by picking up the registration data where data-quality is better;
+ 
+ and using the factors responsible for market-value, with the help of statistical analytics tools, 'Market Value Model's can be built. 
+ 
+ However, if the chosen parameters can be reconciled with the outcomes of fileld survey and a diverse and vast amount of market-value data is collected from field the model can be more reflective of ground reality. Hence, coming on board of Indian Staistical Institute - Kolkata,as decided earlier, for conducting representative sample survey and building  such model/models for representative areas, as well as training the DoRSR officers to conduct such for themselves in future would be very sought after.
+  
+  
+```{r rangecat,fig.align='center',fig.cap= "Mouzas grouped in different plots transfer range:ADSR Durgapur",warning=FALSE,message=FALSE,echo=FALSE}
+
+    knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/plts_trnsf.png")
+
+```
+  
+  <u>Nevertheless, an attempt has been made to build  such a model for a few select areas of ADSR Durgapur in the following way:</u> (Please see Fig \@ref(fig:regression) which outlines the process.)
+  
+  * First a part of ADSR registration data has been chosen;
+  * Distance from nearest bastu plot, nearest metal road have been measured for each plot;
+  * Then each mouza has been categorised as per their yearly registration numbers (See Fig \@ref(fig:rangecat));
+  * Then the data was parted into two parts- namely, trainset and testset;
+  * For trainset regression has been done with known market-value of this set and  set of parametrs to build the model;
+  * Regression has been done to reach at **'Market Value'** with different sets of parameters
+      - <u>One set with parameters</u> - 
+          - **Distance from Bastu,** 
+          - **Distance from metal road,** 
+          - **area of land,**, 
+          - **ROR classification,** 
+          - **Mouza-type** and
+          - **Plots-transfer range;**
+          
+       
+       - <u>another set with parameters</u>-
+            - **Distance from Bastu,** 
+            - **Distance from metal road,** 
+            - **area of land,**, 
+            - **Mouza-type** and
+            - **Plots-transfer range**
+
+            
+    * For both these sets multiple regression methods were followed.^[Random Forest and KNN process for regression were employed for both the sets.]      
+    *  It is found that the model with second set of parameters stated above yielded the best **Rsquared**^[R2 is a statistic that will give some information about the goodness of fit of a model.In regression, the R2 coefficient of determination is a statistical measure of how well the regression predictions approximate the real data points. An R2 of 1 indicates that the regression predictions perfectly fit the data. [source](https://en.wikipedia.org/wiki/Coefficient_of_determination)] value i.e without ROR classification^[Random Forest method resulted the best R2 result.].
+    * Then this model was employed to predict the market-value of the testset.
+    
+    * It has been found that parameters **area of land**,**distance from metal road**,**mouza-type(Municipality1)**, **plots-transfer-range(above 1K)**, **distance from bastu** , **mouza_type(Rural)** - ordered in descending order of importances- play most important determination of market-value in the best model.
+    
+     * Nevertheless, it should be kept in mind that, as these models have been built by training the  existing the market value of the train-set which is the market-value generated by the 'e-nathikaran' system, the underlying weaknesses inherent in the system might creep in these models. Hence the **market-value data of the train-set should be a mixture of both the data from field survey, as well as good market value data, which can be a near reflection of proper market-value on ground, identified from the system.**
+    
+    
+    
+```{r regression, fig.align='center',fig.cap= "Regression process followed for model-building", warning=FALSE, message=FALSE,echo=FALSE,out.width= "150%"}
+
+    knitr::include_graphics("C:/Users/Arnab/projects/Diagrams_conv_rat/Anls_state_data/regression_process.png")
+
+
+
+```
+   
+    
+  Hence analytics can play a very crucial role for DoRSR. It can be employed effectively for regular analysis of revenue data to visualize the trends in different zones of the state, to unearth the underlying pattern, similarities or dissimilarities at the revenue front across offices beyond district-limits and to lay stress on the typically untouched segments for revenue generation as well as for informed decision making- as it will help DoRSR looking beyond the numbers of revenue data only. 
+  
+  
+As analytics can be used for much deeper analysis of the office wise registration data, it can be helpful in detection of anomaly in mouza groups, conversion ratios, base values in effective way. It can render quality service to the DoRSR by helping the ROs in identifying the potential growth centers, by making them aware of the pattern of registration, spatial and seasonal distribution of market-value of properties across different mouzas or across different plot-numbers of selected mouzas under their respective jurisdictions. It can even be proved useful in rendering insights on the registration practices prevalent in an office, about the time-window of the congregation of registrant public at office and thereby on the possible pattern of its public-dealing.
+
+
+Analytics can be helpful in exploring a range of GIS information, various data available on different government or other platforms in respect of market value of properties and can be effectively utilized in building market value models by making use of these data and any data that might come out of field survey.
+Hence it is recommended to start working of a full-fledged regular analytics wing at the headquarter level of DoRSR.
+
+    
+    
+    
+   
+  
+  
+ 
+ 
+
+
+
+
+
